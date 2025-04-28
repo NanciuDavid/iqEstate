@@ -1,17 +1,11 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
+import Footer from './components/layout/Footer'
 
 function App() {
   return (
     <Router>
-      <div className="min-h-screen bg-gray-500">
-        <Routes>
-          <Route path="/" element={
-            <div className="p-4">
-              <h1 className="text-2xl font-semibold">Welcome to React + Tailwind + Router</h1>
-            </div>
-          } />
-        </Routes>
-      </div>
+      <Footer />
+      
     </Router>
   )
 }
