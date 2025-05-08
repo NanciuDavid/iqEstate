@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { Search, MapPin, LineChart, ArrowRight } from 'lucide-react';
 import HeroSearch from '../components/home/HeroSearch';
@@ -7,6 +7,7 @@ import HowItWorks from '../components/home/HowItWorks';
 import TestimonialSection from '../components/home/TestimonialSections';
 
 const HomePage = () => {
+  useEffect(() => window.scrollTo(0, 0), []);
   return (
     <div className="pt-16">
       {/* Hero Section */}
