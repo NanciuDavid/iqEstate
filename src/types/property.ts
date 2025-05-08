@@ -1,6 +1,6 @@
 export interface Property{
     id : string;
-    name : string;
+    title : string;
     price : number;
     pricePerSqft? : number; // will be computed
     surface : number;
@@ -17,7 +17,7 @@ export interface Property{
     featured?: boolean;
     newListing? : boolean; // computed based on listing date
     yearBuilt : number;
-    listeDate? : string;
+    listedDate? : string;
     predictedPrice? : number; // computed based on price history
 
     ownerId : string;

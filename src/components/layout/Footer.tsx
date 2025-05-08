@@ -1,12 +1,8 @@
-import React from "react";
+
 import { Link } from "react-router-dom";
 import {
   Home,
   Mail,
-  GithubIcon,
-  Instagram,
-  X,
-  Facebook,
   Linkedin,
   Github,
   InstagramIcon,
@@ -18,20 +14,20 @@ const Footer = () => {
 
   return (
     <footer className="bg-blue-900 text-white">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="grid grid-cols-1 md:grid cols-2 lg:grid-cols-4 gap-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 ">
+        <div className="flex flex-cols-1 md:flex cols-2 gap-6 lg:flex-cols-4 justify-between">
           <div>
             <div className="flex items-center space-x-2 mb-6">
               <Home className="h-7 w-7"></Home>
               <span className="text-2xl font-bold">EstateIQ</span>
             </div>
           </div>
-          <p className="text-blue-100 mb-6">
+          <p className="text-blue-100 mb-6 text-center">
             Revolutioning real estate with{" "}
             <strong>Machine-Learning-powered price predictions</strong> and
             interactive property discovery.
           </p>
-          <div className="flex space-x-4">
+          <div className="flex space-x-4 lg:justify-end">
             <a
               href="https://www.linkedin.com/in/david-nanciu-alexandru-08884b203/"
               className="text-blue-100 hover:text-blue-250 transition-colors"
@@ -63,7 +59,8 @@ const Footer = () => {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-12">
+          
+        <div className="flex flex-cols-1 md:flex-cols-3 gap-8 mt-12 justify-between">
           <div>
             <h3 className="text-lg font-semibold mb-6">Quick Links</h3>
             <ul className="space-y-3">
@@ -90,7 +87,7 @@ const Footer = () => {
             </ul>
           </div>
 
-          <div>
+          <div className="">
             <h3 className="text-lg font-semibold mb-6">Services</h3>
             <ul className="space-y-3">
               {[
