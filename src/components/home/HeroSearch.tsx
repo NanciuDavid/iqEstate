@@ -310,7 +310,7 @@ const HeroSearch = () => {
                 id="cond"
                 value={condition}
                 onChange={e=>setCondition(e.target.value)}
-                className="w-full py-2 border rounded-md focus:ring-blue-500 "
+                className="w-full py-2 border rounded-md focus:ring-blue-500 px-"
               >
                 <option value="">Any</option>
                 <option value="new">New</option>
