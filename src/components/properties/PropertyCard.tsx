@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Property } from '../../types/property';
-import { MapPin, Home, Bath, BedDouble, Ruler, Heart } from 'lucide-react';
+import { MapPin, Bath, BedDouble, Ruler, Heart } from 'lucide-react';
 
 interface PropertyCardProps {
     property: Property;
