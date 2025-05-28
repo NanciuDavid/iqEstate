@@ -1,0 +1,28 @@
+/* Animation for map container shifting left */
+.map-shift-left {
+  transform: translateX(-5%);
+}
+
+.leaflet-container {
+  height: 100%;
+  width: 100%;
+}
+
+/* Override Leaflet draw styles */
+.leaflet-draw-toolbar a {
+  background-color: #fff;
+  border-radius: 4px;
+  box-shadow: 0 1px 5px rgba(0,0,0,0.2);
+}
+
+.leaflet-draw-toolbar a:hover {
+  background-color: #f8f9fa;
+}
+
+.leaflet-draw-tooltip {
+  background-color: rgba(0, 0, 0, 0.7);
+  color: white;
+  border: none;
+  padding: 5px 10px;
+  border-radius: 4px;
+} 

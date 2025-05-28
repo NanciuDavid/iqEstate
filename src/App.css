@@ -40,3 +40,26 @@
 .read-the-docs {
   color: #888;
 }
+
+/* Add this CSS for the Create Listing button */
+.nav-link-create-listing-button {
+  background-color: #D97706; /* Amber-600 */
+  color: white !important; /* Important to override other text color styles */
+  padding: 0.5rem 1rem !important; /* Adjust padding as needed */
+  border-radius: 0.375rem; /* Rounded-md */
+  font-weight: 500; /* Medium */
+  transition: background-color 0.2s ease-in-out;
+}
+
+.nav-link-create-listing-button:hover {
+  background-color: #B45309; /* Amber-700 */
+}
+
+/* If you want a slightly different style for mobile, you can target it like this */
+/* @media (max-width: 768px) { 
+  .nav-link-create-listing-button {
+    width: 100%;
+    text-align: center;
+    margin-top: 0.5rem;
+  }
+} */

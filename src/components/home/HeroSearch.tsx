@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Search, MapPin, Home, DollarSign, ArrowRight } from 'lucide-react'
+import { Search, MapPin, Home, DollarSign } from 'lucide-react'
 
 const HeroSearch = () => {
   const navigate = useNavigate()
@@ -57,17 +57,17 @@ const HeroSearch = () => {
   ]
 
   return (
-    <div className="bg-white p-6 rounded-xl shadow-lg space-y-4">
+    <div className="bg-white p-6 rounded-xl shadow-2xl space-y-4 border border-slate-200">
       {/* search type toggles */}
       <div className="flex flex-wrap gap-2">
         {pickers.map(item => (
           <button
             key={item.key}
             onClick={() => setSearchType(item.key as 'location'|'price'|'type')}
-            className={`flex items-center gap-1 px-3 py-1 rounded-md ${
+            className={`flex items-center gap-1.5 px-4 py-2 rounded-md text-sm font-medium transition-colors ${
               searchType === item.key
-                ? 'bg-blue-900 text-white'
-                : 'bg-gray-100 text-gray-700'
+                ? 'bg-amber-500 text-white'
+                : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
             }`}
           >
             {item.icon}
@@ -81,18 +81,18 @@ const HeroSearch = () => {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
           {searchType === 'location' && (
             <div className="md:col-span-2">
-              <label htmlFor="location" className="block text-sm text-gray-700">
+              <label htmlFor="location" className="block text-sm font-medium text-slate-700 mb-1">
                 Where?
               </label>
               <div className="relative">
-                <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                 <input
                   id="location"
                   type="text"
                   placeholder="City or address"
                   value={location}
                   onChange={e=>setLocation(e.target.value)}
-                  className="w-full pl-10 py-2 border rounded-md focus:ring-blue-500"
+                  className="w-full pl-10 py-2 border border-slate-300 rounded-md focus:ring-amber-500 focus:border-amber-500 shadow-sm sm:text-sm"
                 />
               </div>
             </div>
@@ -100,16 +100,16 @@ const HeroSearch = () => {
 
           {searchType === 'price' && (
             <div className="md:col-span-2">
-              <label htmlFor="price" className="block text-sm text-gray-700">
+              <label htmlFor="price" className="block text-sm font-medium text-slate-700 mb-1">
                 Price Range
               </label>
               <div className="relative">
-                <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                 <select
                   id="price"
                   value={priceRange}
                   onChange={e => setPriceRange(e.target.value)}
-                  className="w-full pl-10 py-2 border rounded-md focus:ring-blue-500"
+                  className="w-full pl-10 py-2 border border-slate-300 rounded-md focus:ring-amber-500 focus:border-amber-500 shadow-sm sm:text-sm"
                 >
                   <option value="any">Any</option>
                   <option value="0-50000">Under $50k</option>
@@ -123,16 +123,16 @@ const HeroSearch = () => {
 
           {searchType === 'type' && (
             <div className="md:col-span-2">
-              <label htmlFor="ptype" className="block text-sm text-gray-700">
+              <label htmlFor="ptype" className="block text-sm font-medium text-slate-700 mb-1">
                 Property Type
               </label>
               <div className="relative">
-                <Home className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                <Home className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                 <select
                   id="ptype"
                   value={propertyType}
                   onChange={e => setPropertyType(e.target.value)}
-                  className="w-full pl-10 py-2 border rounded-md focus:ring-blue-500"
+                  className="w-full pl-10 py-2 border border-slate-300 rounded-md focus:ring-amber-500 focus:border-amber-500 shadow-sm sm:text-sm"
                 >
                   <option value="">Any</option>
                   <option value="studio">Studio</option>
@@ -147,7 +147,7 @@ const HeroSearch = () => {
           <button
             type="button"
             onClick={() => setShowAdvanced(v => !v)}
-            className="md:col-span-1 px-3 py-2 border rounded-md text-blue-600 hover:bg-gray-100"
+            className="md:col-span-1 px-3 py-2 border border-slate-300 rounded-md text-slate-700 hover:bg-slate-100 hover:border-slate-400 transition-colors shadow-sm text-sm font-medium"
           >
             {showAdvanced ? 'Hide Filters' : 'More Filters'}
           </button>
@@ -155,28 +155,28 @@ const HeroSearch = () => {
           <button
             type="submit"
             className={`
-              md:col-span-1 px-4 py-2 bg-blue-900 text-white rounded-md hover:bg-blue-800
-              flex items-center justify-center gap-2
+              md:col-span-1 px-4 py-2 bg-amber-600 text-white rounded-md hover:bg-amber-700 focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 transition-colors shadow-sm
+              flex items-center justify-center gap-2 text-sm font-medium
               ${showAdvanced ? 'hidden md:flex' : 'flex'}
             `}
           >
-            Search <Search />
+            Search <Search className="w-4 h-4"/>
           </button>
         </div>
 
         {/* advanced panel */}
         {showAdvanced && (
-          <div className="pt-4 border-t grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="pt-4 border-t border-slate-300 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-4 gap-y-6">
             {/* Rooms */}
             <div>
-              <label htmlFor="rooms" className="block text-sm text-gray-700">
+              <label htmlFor="rooms" className="block text-sm font-medium text-slate-700 mb-1">
                 Rooms
               </label>
               <select
                 id="rooms"
                 value={rooms}
                 onChange={e=>setRooms(e.target.value)}
-                className="w-full py-2 border rounded-md focus:ring-blue-500 px-2"
+                className="w-full py-2 border border-slate-300 rounded-md focus:ring-amber-500 focus:border-amber-500 shadow-sm sm:text-sm px-2"
               >
                 <option value="">Any</option>
                 {[1,2,3,4,5,6].map(n=>(
@@ -187,14 +187,14 @@ const HeroSearch = () => {
 
             {/* Floor */}
             <div>
-              <label htmlFor="floor" className="block text-sm text-gray-700 px-2">
+              <label htmlFor="floor" className="block text-sm font-medium text-slate-700 mb-1">
                 Floor
               </label>
               <select
                 id="floor"
                 value={floor}
                 onChange={e=>setFloor(e.target.value)}
-                className="w-full py-2 border rounded-md focus:ring-blue-500 px-2"
+                className="w-full py-2 border border-slate-300 rounded-md focus:ring-amber-500 focus:border-amber-500 shadow-sm sm:text-sm px-2"
               >
                 <option value="">Any</option>
                 {[...Array(10)].map((_,i)=>(
@@ -205,56 +205,56 @@ const HeroSearch = () => {
 
             {/* Total Floors */}
             <div>
-              <label className="block text-sm text-gray-700">Total Floors</label>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Total Floors</label>
               <div className="flex gap-2">
                 <input
                   type="number"
                   placeholder="Min"
                   value={floorsMin}
                   onChange={e=>setFloorsMin(e.target.value)}
-                  className="w-1/2 py-2 border rounded-md focus:ring-blue-500 px-2"
+                  className="w-1/2 py-2 border border-slate-300 rounded-md focus:ring-amber-500 focus:border-amber-500 shadow-sm sm:text-sm px-2"
                 />
                 <input
                   type="number"
                   placeholder="Max"
                   value={floorsMax}
                   onChange={e=>setFloorsMax(e.target.value)}
-                  className="w-1/2 py-2 border rounded-md focus:ring-blue-500 px-2"
+                  className="w-1/2 py-2 border border-slate-300 rounded-md focus:ring-amber-500 focus:border-amber-500 shadow-sm sm:text-sm px-2"
                 />
               </div>
             </div>
 
             {/* Price / m² */}
             <div>
-              <label className="block text-sm text-gray-700">Price / m²</label>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Price / m²</label>
               <div className="flex gap-2">
                 <input
                   type="number"
                   placeholder="Min"
                   value={priceMin}
                   onChange={e=>setPriceMin(e.target.value)}
-                  className="w-1/2 py-2 border rounded-md focus:ring-blue-500 px-2"
+                  className="w-1/2 py-2 border border-slate-300 rounded-md focus:ring-amber-500 focus:border-amber-500 shadow-sm sm:text-sm px-2"
                 />
                 <input
                   type="number"
                   placeholder="Max"
                   value={priceMax}
                   onChange={e=>setPriceMax(e.target.value)}
-                  className="w-1/2 py-2 border rounded-md focus:ring-blue-500 px-2"
+                  className="w-1/2 py-2 border border-slate-300 rounded-md focus:ring-amber-500 focus:border-amber-500 shadow-sm sm:text-sm px-2"
                 />
               </div>
             </div>
 
             {/* Listed */}
             <div>
-              <label htmlFor="listed" className="block text-sm text-gray-700">
-                Listed
+              <label htmlFor="listed" className="block text-sm font-medium text-slate-700 mb-1">
+                Listed (days ago)
               </label>
               <select
                 id="listed"
                 value={listed}
-                onChange={e=>setListed(e.target.value)}
-                className="w-full py-2 border rounded-md focus:ring-blue-500 px-2"
+                onChange={e => setListed(e.target.value)}
+                className="w-full py-2 border border-slate-300 rounded-md focus:ring-amber-500 focus:border-amber-500 shadow-sm sm:text-sm px-2"
               >
                 <option value="">Any</option>
                 <option value="24h">Last 24h</option>
@@ -265,35 +265,35 @@ const HeroSearch = () => {
 
             {/* Year Built */}
             <div>
-              <label className="block text-sm text-gray-700">Year Built</label>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Year Built</label>
               <div className="flex gap-2">
                 <input
                   type="number"
-                  placeholder="From"
+                  placeholder="Min"
                   value={yearMin}
                   onChange={e=>setYearMin(e.target.value)}
-                  className="w-1/2 py-2 border rounded-md focus:ring-blue-500 px-2"
+                  className="w-1/2 py-2 border border-slate-300 rounded-md focus:ring-amber-500 focus:border-amber-500 shadow-sm sm:text-sm px-2"
                 />
                 <input
                   type="number"
-                  placeholder="To"
+                  placeholder="Max"
                   value={yearMax}
                   onChange={e=>setYearMax(e.target.value)}
-                  className="w-1/2 py-2 border rounded-md focus:ring-blue-500 px-2"
+                  className="w-1/2 py-2 border border-slate-300 rounded-md focus:ring-amber-500 focus:border-amber-500 shadow-sm sm:text-sm px-2"
                 />
               </div>
             </div>
 
-            {/* Seller */}
+            {/* Seller Type */}
             <div>
-              <label htmlFor="seller" className="block text-sm text-gray-700">
-                Seller
+              <label htmlFor="seller" className="block text-sm font-medium text-slate-700 mb-1">
+                Seller Type
               </label>
               <select
                 id="seller"
                 value={seller}
                 onChange={e=>setSeller(e.target.value)}
-                className="w-full py-2 border rounded-md focus:ring-blue-500 px-2"
+                className="w-full py-2 border border-slate-300 rounded-md focus:ring-amber-500 focus:border-amber-500 shadow-sm sm:text-sm px-2"
               >
                 <option value="">Any</option>
                 <option value="owner">Owner</option>
@@ -303,14 +303,14 @@ const HeroSearch = () => {
 
             {/* Condition */}
             <div>
-              <label htmlFor="cond" className="block text-sm text-gray-700">
+              <label htmlFor="condition" className="block text-sm font-medium text-slate-700 mb-1">
                 Condition
               </label>
               <select
-                id="cond"
+                id="condition"
                 value={condition}
                 onChange={e=>setCondition(e.target.value)}
-                className="w-full py-2 border rounded-md focus:ring-blue-500 px-"
+                className="w-full py-2 border border-slate-300 rounded-md focus:ring-amber-500 focus:border-amber-500 shadow-sm sm:text-sm px-2"
               >
                 <option value="">Any</option>
                 <option value="new">New</option>
@@ -318,33 +318,32 @@ const HeroSearch = () => {
               </select>
             </div>
 
-            {/* Features */}
-            <div className="col-span-full">
-              <span className="block text-sm text-gray-700 mb-1">Features</span>
-              <div className="flex flex-wrap gap-2">
-                {['Balcony','Terrace','Garage','Elevator','Garden','Pictures'].map(f => (
-                  <label key={f} className="inline-flex items-center space-x-1">
+            {/* Features Checkboxes */}
+            <div className="sm:col-span-2 lg:col-span-3">
+              <label className="block text-sm font-medium text-slate-700 mb-2">Features</label>
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-x-4 gap-y-2">
+                {[ 'Parking', 'Garage', 'Balcony', 'Terrace', 'Garden', 'Elevator', 'Furnished', 'New Building'].map(f => (
+                  <div key={f} className="flex items-center">
                     <input
                       type="checkbox"
-                      value={f.toLowerCase()}
-                      checked={features.includes(f.toLowerCase())}
+                      id={`feature-${f}`}
+                      value={f}
+                      checked={features.includes(f)}
                       onChange={handleFeatureChange}
-                      className="rounded border-gray-300 text-blue-900 focus:ring-blue-500"
+                      className="h-4 w-4 text-amber-600 border-slate-300 rounded focus:ring-amber-500 shadow-sm"
                     />
-                    <span className="text-sm">{f}</span>
-                  </label>
+                    <label htmlFor={`feature-${f}`} className="ml-2 text-sm text-slate-600">
+                      {f}
+                    </label>
+                  </div>
                 ))}
               </div>
             </div>
-
-            {/* on small screens only, re-render the Search button below */ }
-            <div className="col-span-full md:hidden mt-4">
-              <button
-                type="submit"
-                className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-blue-900 text-white rounded-md hover:bg-blue-800"
-              >
-                Search <ArrowRight />
-              </button>
+            
+            <div className="sm:col-span-2 lg:col-span-3 flex justify-end pt-4">
+                <button type="submit" className="px-6 py-2 bg-amber-600 text-white rounded-md hover:bg-amber-700 focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 transition-colors shadow-sm text-sm font-medium">
+                    Apply Filters & Search
+                </button>
             </div>
           </div>
         )}

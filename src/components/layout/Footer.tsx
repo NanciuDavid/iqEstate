@@ -1,4 +1,3 @@
-
 import { Link } from "react-router-dom";
 import {
   Home,
@@ -13,45 +12,45 @@ const Footer = () => {
   const currentYear = new Date().getFullYear();
 
   return (
-    <footer className="bg-blue-900 text-white">
+    <footer className="bg-slate-900 text-slate-200">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 ">
         <div className="flex flex-cols-1 md:flex cols-2 gap-6 lg:flex-cols-4 justify-between">
           <div>
             <div className="flex items-center space-x-2 mb-6">
-              <Home className="h-7 w-7"></Home>
-              <span className="text-2xl font-bold">EstateIQ</span>
+              <Home className="h-7 w-7 text-amber-400" />
+              <span className="text-2xl font-bold text-slate-50">EstateIQ</span>
             </div>
           </div>
-          <p className="text-blue-100 mb-6 text-center">
+          <p className="text-slate-300 mb-6 text-center">
             Revolutioning real estate with{" "}
-            <strong>Machine-Learning-powered price predictions</strong> and
+            <strong className="text-slate-100">Machine-Learning-powered price predictions</strong> and
             interactive property discovery.
           </p>
           <div className="flex space-x-4 lg:justify-end">
             <a
               href="https://www.linkedin.com/in/david-nanciu-alexandru-08884b203/"
-              className="text-blue-100 hover:text-blue-250 transition-colors"
+              className="text-slate-300 hover:text-amber-400 transition-colors"
               target="_blank"
             >
               <Linkedin className="h-6 w-6"></Linkedin>
             </a>
             <a
               href="mailto:nanciudavid@outlook.com"
-              className="text-blue-100 hover:text-blue-250 transition-colors"
+              className="text-slate-300 hover:text-amber-400 transition-colors"
               target="_blank"
             >
               <Mail className="h-6 w-6"></Mail>
             </a>
             <a
               href="https://github.com/NanciuDavid"
-              className="text-blue-100 hover:text-blue-250 transition-colors"
+              className="text-slate-300 hover:text-amber-400 transition-colors"
               target="_blank"
             >
               <Github className="h-6 w-6"></Github>
             </a>
             <a
               href="https://www.instagram.com/davidnanciu/"
-              className="text-blue-100 hover:text-blue-250 transition-colors"
+              className="text-slate-300 hover:text-amber-400 transition-colors"
               target="_blank"
             >
               <InstagramIcon></InstagramIcon>
@@ -62,7 +61,7 @@ const Footer = () => {
           
         <div className="flex flex-cols-1 md:flex-cols-3 gap-8 mt-12 justify-between">
           <div>
-            <h3 className="text-lg font-semibold mb-6">Quick Links</h3>
+            <h3 className="text-lg font-semibold text-slate-100 mb-6">Quick Links</h3>
             <ul className="space-y-3">
               {[
                 "Home",
@@ -78,7 +77,7 @@ const Footer = () => {
                         ? "/"
                         : `/${item.toLowerCase().replace(/\s+/g, "-")}`
                     }
-                    className="text-blue-100 hover:text-blue-750 transition-colors"
+                    className="text-slate-300 hover:text-amber-400 transition-colors"
                   >
                     {item}
                   </Link>
@@ -88,7 +87,7 @@ const Footer = () => {
           </div>
 
           <div className="">
-            <h3 className="text-lg font-semibold mb-6">Services</h3>
+            <h3 className="text-lg font-semibold text-slate-100 mb-6">Services</h3>
             <ul className="space-y-3">
               {[
                 "Property Valuation",
@@ -100,7 +99,7 @@ const Footer = () => {
                 <li key={item}>
                   <a
                     href="#"
-                    className="text-blue-100 hover:text-white transition-colors"
+                    className="text-slate-300 hover:text-amber-400 transition-colors"
                   >
                     {item}
                   </a>
@@ -110,17 +109,17 @@ const Footer = () => {
           </div>
 
           <div>
-            <h3 className="text-lg font-semibold mb-6">Contact Us</h3>
+            <h3 className="text-lg font-semibold text-slate-100 mb-6">Contact Us</h3>
             <ul className="space-y-4">
               <li className="flex items-start space-x-3">
-                <Mail className="h-5 w-5 mt-0.5 text-blue-100" />
-                <span className="text-blue-100">contact@estateiq.com</span>
+                <Mail className="h-5 w-5 mt-0.5 text-amber-400" />
+                <span className="text-slate-300">contact@estateiq.com</span>
               </li>
               <li className="flex items-start space-x-3">
-                <Phone className="h-5 w-5 mt-0.5 text-blue-100" />
-                <span className="text-blue-100">+1 (555) 123-4567</span>
+                <Phone className="h-5 w-5 mt-0.5 text-amber-400" />
+                <span className="text-slate-300">+1 (555) 123-4567</span>
               </li>
-              <li className="text-blue-100 mt-6">
+              <li className="text-slate-300 mt-6">
                 0550918 Bucharest
                 <br />
                 Calea Rahovei 338
@@ -131,30 +130,31 @@ const Footer = () => {
           </div>
         </div>
 
-        <div className="border-t border-blue-800 mt-12 pt-6">
+        <div className="border-t border-slate-700 mt-12 pt-6">
           <div className="flex flex-col md:flex-row justify-between items-center">
-            <p className="text-blue-100 text-sm">
+            <p className="text-slate-400 text-sm">
               &copy; {currentYear} EstateIQ. All rights reserved.
             </p>
             <div className="flex space-x-6 mt-4 md:mt-0">
               <Link
-                to="/privacy"
-                className="text-blue-100 text-sm hover:text-white transition-colors"
+                to="/privacy-policy"
+                className="text-slate-400 text-sm hover:text-amber-400 transition-colors"
               >
                 Privacy Policy
               </Link>
               <Link
-                to="/terms"
-                className="text-blue-100 text-sm hover:text-white transition-colors"
+                to="/terms-of-service"
+                className="text-slate-400 text-sm hover:text-amber-400 transition-colors"
               >
                 Terms of Service
               </Link>
-              <Link
+              {/* Cookie Policy link can be added later if a page is created */}
+              {/* <Link
                 to="/cookies"
                 className="text-blue-100 text-sm hover:text-white transition-colors"
               >
                 Cookie Policy
-              </Link>
+              </Link> */}
             </div>
           </div>
         </div>

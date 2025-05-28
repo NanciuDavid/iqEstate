@@ -6,7 +6,7 @@ interface PrivateRouteProps {
 
 const PrivateRoute = ({ isAuthenticated }: PrivateRouteProps) => {
   const location = useLocation();
-  const publicPaths = ['/home', '/about-us', '/'];
+  const publicPaths = ['/home', '/about-us', '/', '/map-search'];
 
 
   if (!isAuthenticated && !publicPaths.includes(location.pathname)) {
