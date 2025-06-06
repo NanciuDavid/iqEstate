@@ -4,22 +4,33 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { randomUUID } from 'crypto';
 import dotenv from 'dotenv';
+import { PrismaClient } from '@prisma/client';
 
 dotenv.config();
 
-const router = Router();
-const JWT_SECRET = process.env.JWT_SECRET;
+// Initialize and check environment variables immediately after dotenv.config()
 const DB_URL = process.env.DB_URL;
+const JWT_SECRET = process.env.JWT_SECRET;
+
+console.log('DEBUG: Loaded DB_URL from .env:', DB_URL);
+console.log('DEBUG: Loaded JWT_SECRET from .env:', JWT_SECRET);
 
 if (!DB_URL) {
-  throw new Error('DB_URL is not set');
+  console.error('FATAL ERROR: DB_URL is not set in .env file');
+  process.exit(1); // Exit if DB_URL is not set
 }
 if (!JWT_SECRET) {
-  throw new Error('JWT_SECRET is not set');
+  console.error('FATAL ERROR: JWT_SECRET is not set in .env file');
+  process.exit(1); // Exit if JWT_SECRET is not set
 }
 
-// Initialize Neon client
+// Initialize Neon client after DB_URL is confirmed
 const sql = neon(DB_URL);
+
+console.log('DEBUG: Attempting to instantiate PrismaClient from custom path');
+const prisma = new PrismaClient();
+
+const router = Router();
 
 // User types
 enum UserType {
@@ -32,23 +43,32 @@ const DEFAULT_PROFILE_PIC = 'https://www.pexels.com/photo/man-wearing-blue-crew-
 
 // POST /register
 router.post('/register', async (req: Request, res: Response) : Promise<any>=>  {
-  const { email, password, firstName, lastName, phoneNumber } = req.body;
+  const { email, password, firstName, lastName, phoneNumber , confirmPassword} = req.body;
   
   // Basic validation
-  if (!email || !password || !firstName || !lastName || !phoneNumber) {
+  if (!email || !password || !firstName || !lastName || !phoneNumber || !confirmPassword) {
     return res.status(400).json({ message: 'Missing required fields' });
   }
   if (typeof password !== 'string' || password.length < 8) {
     return res.status(400).json({ message: 'Password must be at least 8 characters long' });
   }
 
+
   try {
     // Check for existing email or phone
-    const [byEmail] = await sql`SELECT user_id FROM users WHERE email = ${email}`;
+    const byEmail = await prisma.users.findUnique({
+        where:{
+            email : email
+        }
+    });
     if (byEmail) {
       return res.status(400).json({ message: 'Email already in use' });
     }
-    const [byPhone] = await sql`SELECT user_id FROM users WHERE phone_number = ${phoneNumber}`;
+    const byPhone = await prisma.users.findFirst({
+        where: {
+            phone_number : phoneNumber
+        }
+    });
     if (byPhone) {
       return res.status(400).json({ message: 'Phone number already in use' });
     }
@@ -59,15 +79,21 @@ router.post('/register', async (req: Request, res: Response) : Promise<any>=>  {
     const userId = randomUUID();
 
     // Insert user
-    const [newUser] = await sql`
-      INSERT INTO users
-        (user_id, email, password_hash, first_name, last_name, phone_number,
-         created_at, updated_at, user_type, profile_picture_url, is_verified)
-      VALUES
-        (${userId}, ${email}, ${hashedPassword}, ${firstName}, ${lastName}, ${phoneNumber},
-         ${now}, ${now}, ${UserType.USER}, ${DEFAULT_PROFILE_PIC}, ${false})
-      RETURNING *
-    `;
+    const newUser = await prisma.users.create({
+        data : {
+            user_id : userId,
+            email : email,
+            password_hash : hashedPassword,
+            first_name : firstName,
+            last_name : lastName,
+            phone_number : phoneNumber,
+            user_type : UserType.USER,
+            profile_picture_url : DEFAULT_PROFILE_PIC,
+            is_verified : false,
+            created_at : now,
+            updated_at : now,
+        }
+    })
 
     // Build JWT payload
     const payload = {

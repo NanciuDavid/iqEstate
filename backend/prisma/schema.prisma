@@ -1,0 +1,311 @@
+generator client {
+  provider = "prisma-client-js"
+  // output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DB_URL")
+}
+
+model apartment_details {
+  property_id                    String     @id @db.Uuid
+  apartment_type_scraped         String?    @db.VarChar(255)
+  floor_number_scraped           String?    @db.VarChar(100)
+  floor_number_parsed            Int?
+  total_floors_in_building       Int?
+  building_type_scraped          String?    @db.VarChar(255)
+  heating_system_scraped         String?    @db.VarChar(255)
+  is_furnished_scraped           String?    @db.VarChar(100)
+  has_balcony                    Boolean?
+  has_elevator                   Boolean?
+  additional_information_scraped String?
+  properties                     properties @relation(fields: [property_id], references: [internal_property_id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+model countries {
+  country_id                 Int                          @id @default(autoincrement())
+  country_name               String                       @unique @db.VarChar(255)
+  iso_alpha2_code            String?                      @unique @db.Char(2)
+  iso_alpha3_code            String?                      @unique @db.Char(3)
+  region                     String?                      @db.VarChar(100)
+  sub_region                 String?                      @db.VarChar(100)
+  country_macroeconomic_data country_macroeconomic_data[]
+  properties                 properties[]
+}
+
+model country_macroeconomic_data {
+  data_id                    Int                        @id @default(autoincrement())
+  country_id                 Int
+  factor_type_id             Int
+  data_date                  DateTime                   @db.Date
+  value                      Decimal?                   @db.Decimal(20, 5)
+  date_recorded              DateTime?                  @default(now()) @db.Timestamptz(6)
+  countries                  countries                  @relation(fields: [country_id], references: [country_id], onDelete: NoAction, onUpdate: NoAction)
+  macroeconomic_factor_types macroeconomic_factor_types @relation(fields: [factor_type_id], references: [factor_type_id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@unique([country_id, factor_type_id, data_date])
+}
+
+model facilities {
+  facility_id                Int                          @id @default(autoincrement())
+  name                       String                       @unique @db.VarChar(255)
+  category                   String?                      @db.VarChar(100)
+  property_nearby_facilities property_nearby_facilities[]
+}
+
+model facility_types {
+  facility_type_id Int    @id @default(autoincrement())
+  facility_name    String @unique @db.VarChar(100)
+}
+
+model features_and_amenities {
+  feature_id               Int                        @id @default(autoincrement())
+  feature_name             String                     @unique @db.VarChar(255)
+  category                 String?                    @db.VarChar(100)
+  property_to_feature_link property_to_feature_link[]
+}
+
+model house_details {
+  property_id                    String     @id @db.Uuid
+  house_type_scraped             String?    @db.VarChar(255)
+  floors_scraped                 String?    @db.VarChar(100)
+  heating_system_scraped         String?    @db.VarChar(255)
+  land_surface_area              Decimal?   @db.Decimal(10, 2)
+  construction_material_scraped  String?    @db.VarChar(255)
+  has_garden_bool                Boolean?
+  has_pool_bool                  Boolean?
+  has_garage_bool                Boolean?
+  additional_information_scraped String?
+  properties                     properties @relation(fields: [property_id], references: [internal_property_id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+model macroeconomic_factor_types {
+  factor_type_id             Int                          @id @default(autoincrement())
+  factor_name                String                       @unique @db.VarChar(255)
+  factor_description         String?
+  unit                       String?                      @db.VarChar(50)
+  data_source                String?                      @db.VarChar(255)
+  frequency                  String?                      @db.VarChar(50)
+  country_macroeconomic_data country_macroeconomic_data[]
+}
+
+model ml_price_predictions {
+  prediction_id      Int        @id @default(autoincrement())
+  property_id        String     @db.Uuid
+  model_version      String     @db.VarChar(100)
+  predicted_price    Decimal    @db.Decimal(14, 2)
+  prediction_date    DateTime?  @default(now()) @db.Timestamptz(6)
+  confidence_score   Decimal?   @db.Decimal(5, 4)
+  feature_importance Json?
+  properties         properties @relation(fields: [property_id], references: [internal_property_id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+model properties {
+  internal_property_id           String                       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  source_listing_id              String                       @db.VarChar(255)
+  source_name                    String                       @default("storia.ro") @db.VarChar(100)
+  source_url                     String?                      @unique
+  country_id                     Int?
+  listing_type                   String?                      @default("SALE") @db.VarChar(50)
+  property_category              String?                      @db.VarChar(100)
+  title                          String?
+  price                          Decimal?                     @db.Decimal(14, 2)
+  currency                       String?                      @default("EUR") @db.VarChar(10)
+  price_per_sqm                  Decimal?                     @db.Decimal(10, 2)
+  rent_price                     Decimal?                     @db.Decimal(10, 2)
+  address_text                   String?
+  city                           String?                      @db.VarChar(255)
+  county                         String?                      @db.VarChar(255)
+  latitude                       Float?
+  longitude                      Float?
+  total_surface_area             Decimal?                     @db.Decimal(10, 2)
+  number_of_rooms                Int?
+  construction_year              Int?
+  property_condition_scraped     String?                      @db.VarChar(255)
+  advertiser_type_scraped        String?                      @db.VarChar(100)
+  availability_date              DateTime?                    @db.Date
+  property_form_scraped          String?                      @db.VarChar(255)
+  is_new_building_bool           Boolean?
+  distance_to_school_meters      Int?
+  has_school_nearby_bool         Boolean?
+  distance_to_park_meters        Int?
+  has_park_nearby_bool           Boolean?
+  distance_to_transport_meters   Int?
+  has_transport_nearby_bool      Boolean?
+  distance_to_supermarket_meters Int?
+  has_supermarket_nearby_bool    Boolean?
+  distance_to_hospital_meters    Int?
+  has_hospital_nearby_bool       Boolean?
+  distance_to_restaurant_meters  Int?
+  has_restaurant_nearby_bool     Boolean?
+  distance_to_gym_meters         Int?
+  has_gym_nearby_bool            Boolean?
+  distance_to_mall_meters        Int?
+  has_mall_nearby_bool           Boolean?
+  accessibility_score            Decimal?                     @db.Decimal(5, 2)
+  facility_count                 Int?
+  accessibility_label            String?                      @db.VarChar(100)
+  image_count                    Int?                         @default(0)
+  date_scraped                   DateTime?                    @default(now()) @db.Timestamptz(6)
+  date_last_scraped              DateTime?                    @default(now()) @db.Timestamptz(6)
+  is_active_on_source            Boolean?                     @default(true)
+  raw_scraped_fields             Json?
+  date_created                   DateTime?                    @default(now()) @db.Timestamptz(6)
+  last_modified_at               DateTime?                    @default(now()) @db.Timestamptz(6)
+  apartment_details              apartment_details?
+  house_details                  house_details?
+  ml_price_predictions           ml_price_predictions[]
+  countries                      countries?                   @relation(fields: [country_id], references: [country_id], onDelete: NoAction, onUpdate: NoAction)
+  property_images                property_images[]
+  property_nearby_facilities     property_nearby_facilities[]
+  property_to_feature_link       property_to_feature_link[]
+  user_saved_listings            user_saved_listings[]
+
+  @@unique([source_listing_id, source_name])
+  @@index([property_category], map: "idx_properties_category")
+  @@index([city, county], map: "idx_properties_city_county")
+  @@index([latitude, longitude], map: "idx_properties_location")
+  @@index([price], map: "idx_properties_price")
+  @@index([source_url], map: "idx_properties_source_url")
+}
+
+model property_images {
+  image_id    Int        @id @default(autoincrement())
+  property_id String     @db.Uuid
+  image_url   String
+  s3_bucket   String?    @db.VarChar(255)
+  s3_key      String?
+  is_primary  Boolean?   @default(false)
+  sort_order  Int?       @default(0)
+  date_added  DateTime?  @default(now()) @db.Timestamptz(6)
+  properties  properties @relation(fields: [property_id], references: [internal_property_id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([property_id, image_url])
+  @@index([property_id], map: "idx_property_images_property_id")
+}
+
+model property_nearby_facilities {
+  property_id     String     @db.Uuid
+  facility_id     Int
+  distance_meters Int?
+  facilities      facilities @relation(fields: [facility_id], references: [facility_id], onDelete: Cascade, onUpdate: NoAction)
+  properties      properties @relation(fields: [property_id], references: [internal_property_id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@id([property_id, facility_id])
+}
+
+model property_to_feature_link {
+  property_id            String                 @db.Uuid
+  feature_id             Int
+  features_and_amenities features_and_amenities @relation(fields: [feature_id], references: [feature_id], onDelete: Cascade, onUpdate: NoAction)
+  properties             properties             @relation(fields: [property_id], references: [internal_property_id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@id([property_id, feature_id])
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model spatial_ref_sys {
+  srid      Int     @id
+  auth_name String? @db.VarChar(256)
+  auth_srid Int?
+  srtext    String? @db.VarChar(2048)
+  proj4text String? @db.VarChar(2048)
+}
+
+model user_favorites {
+  user_id      String    @db.Uuid
+  property_id  String    @db.Uuid
+  favorited_at DateTime? @default(now()) @db.Timestamptz(6)
+
+  @@id([user_id, property_id])
+}
+
+model user_profiles {
+  user_id             String                @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  auth_provider_id    String?               @unique @db.VarChar(255)
+  username            String?               @unique @db.VarChar(255)
+  email               String                @unique @db.VarChar(255)
+  first_name          String?               @db.VarChar(100)
+  last_name           String?               @db.VarChar(100)
+  phone_number        String?               @db.VarChar(50)
+  profile_picture_url String?
+  date_registered     DateTime?             @default(now()) @db.Timestamptz(6)
+  last_login          DateTime?             @db.Timestamptz(6)
+  user_saved_listings user_saved_listings[]
+  user_search_history user_search_history[]
+}
+
+model user_saved_listings {
+  saved_listing_id Int           @id @default(autoincrement())
+  user_id          String        @db.Uuid
+  property_id      String        @db.Uuid
+  date_saved       DateTime?     @default(now()) @db.Timestamptz(6)
+  notes            String?
+  properties       properties    @relation(fields: [property_id], references: [internal_property_id], onDelete: Cascade, onUpdate: NoAction)
+  user_profiles    user_profiles @relation(fields: [user_id], references: [user_id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([user_id, property_id])
+}
+
+model user_search_history {
+  search_id         Int            @id @default(autoincrement())
+  user_id           String?        @db.Uuid
+  search_query_text String?
+  search_filters    Json?
+  search_timestamp  DateTime?      @default(now()) @db.Timestamptz(6)
+  result_count      Int?
+  user_profiles     user_profiles? @relation(fields: [user_id], references: [user_id], onDelete: Cascade, onUpdate: NoAction)
+}
+
+model users {
+  user_id             String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  email               String    @unique @db.VarChar(255)
+  password_hash       String    @db.VarChar(255)
+  first_name          String?   @db.VarChar(100)
+  last_name           String?   @db.VarChar(100)
+  phone_number        String?   @db.VarChar(20)
+  user_type           String?   @default("standard") @db.VarChar(50)
+  profile_picture_url String?
+  is_verified         Boolean?  @default(false)
+  created_at          DateTime? @default(now()) @db.Timestamptz(6)
+  updated_at          DateTime? @default(now()) @db.Timestamptz(6)
+}
+
+enum currency_enum {
+  EUR
+  RON
+  USD
+}
+
+enum heating_type_enum {
+  CENTRAL_HEATING
+  OWN_GAS_HEATING
+  ELECTRIC
+  WOOD_STOVE
+  DISTRICT_HEATING
+  NONE
+  OTHER
+}
+
+enum property_status_enum {
+  AVAILABLE
+  SOLD
+  RENTED
+  PENDING
+  UNAVAILABLE
+  DRAFT
+}
+
+enum property_type_enum {
+  APARTMENT
+  HOUSE
+  LAND
+  OTHER_PROPERTY
+}
+
+enum seller_type_enum {
+  OWNER
+  AGENT
+  DEVELOPER
+}
