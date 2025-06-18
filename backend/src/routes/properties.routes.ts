@@ -44,14 +44,14 @@ router.post('/search-by-area', searchPropertiesByArea);
 
 // POST /api/properties - Create a new property listing
 // Requires authentication - only logged-in users can create properties
-router.post('/', verifyToken, createProperty);
+router.post('/', verifyToken as any, createProperty as any);
 
 // PUT /api/properties/:id - Update an existing property
 // Requires authentication - only the owner or admin can update
-router.put('/:id', verifyToken, updateProperty);
+router.put('/:id', verifyToken as any, updateProperty as any);
 
 // DELETE /api/properties/:id - Delete/deactivate a property
 // Requires authentication - only the owner or admin can delete
-router.delete('/:id', verifyToken, deleteProperty);
+router.delete('/:id', verifyToken as any, deleteProperty as any);
 
 export default router; 

@@ -5,6 +5,8 @@ import { Property } from '../types/property';
 import { ChevronRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { propertyService } from '../services';
+import { useFavorites } from '../hooks/useFavorites';
+import { useAuth } from '../hooks/useAuthQuery';
 
 // Type for raw backend property response before transformation
 interface BackendPropertyResponse {
@@ -36,6 +38,14 @@ const PropertiesPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [activeFilters, setActiveFilters] = useState<FilterState | null>(null);
   const [sortBy, setSortBy] = useState<string>('newest');
+
+  // === HOOKS ===
+  const { isAuthenticated } = useAuth();
+  const { 
+    addToFavorites, 
+    removeFromFavorites, 
+    favorites
+  } = useFavorites();
 
   // Scroll to top when component mounts
   useEffect(() => {
@@ -451,9 +461,28 @@ const PropertiesPage: React.FC = () => {
               key={property.id} 
               property={property}
               className="h-full"
-              onFavoriteChange={(propertyId, isFavorite) => {
+              initialIsFavorite={favorites.some(fav => fav.id === property.id)}
+              onFavoriteChange={async (propertyId, isFavorite) => {
                 console.log(`Property ${propertyId} favorite status: ${isFavorite}`);
-                // TODO: Implement API call to save favorite status
+                
+                if (!isAuthenticated) {
+                  console.warn('User not authenticated - cannot save favorites');
+                  // Optionally show a toast or redirect to login
+                  return;
+                }
+
+                try {
+                  if (isFavorite) {
+                    await addToFavorites(propertyId);
+                    console.log('✅ Successfully added property to favorites');
+                  } else {
+                    await removeFromFavorites(propertyId);
+                    console.log('✅ Successfully removed property from favorites');
+                  }
+                } catch (error) {
+                  console.error('❌ Error updating favorite status:', error);
+                  // Optionally show error toast to user
+                }
               }}
             />
           ))}

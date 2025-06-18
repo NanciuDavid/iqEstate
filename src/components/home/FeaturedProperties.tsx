@@ -21,6 +21,9 @@ import {
   PropertyStatus,
   ListingType 
 } from '../../types/property';
+import { propertyService } from '../../services';
+import { useFavorites } from '../../hooks/useFavorites';
+import { useAuth } from '../../hooks/useAuthQuery';
 
 // Type for raw backend property response before transformation
 interface BackendPropertyResponse {
@@ -43,7 +46,6 @@ interface BackendPropertyResponse {
   listedDate?: string;
   [key: string]: unknown; // For any additional backend fields
 }
-import { propertyService } from '../../services';
 
 const FeaturedProperties: React.FC = () => {
   
@@ -51,6 +53,14 @@ const FeaturedProperties: React.FC = () => {
   const [featuredProperties, setProperties] = useState<Property[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+
+  // === HOOKS ===
+  const { isAuthenticated } = useAuth();
+  const { 
+    addToFavorites, 
+    removeFromFavorites, 
+    favorites
+  } = useFavorites();
 
   // === HELPER FUNCTIONS ===
 
@@ -135,9 +145,25 @@ const FeaturedProperties: React.FC = () => {
   /**
    * Handle favorite changes from PropertyCard components
    */
-  const handleFavoriteChange = (propertyId: string, isFavorite: boolean) => {
-    console.log(`Property ${propertyId} favorite status: ${isFavorite}`);
-    // TODO: Implement API call to save favorite status
+  const handleFavoriteChange = async (propertyId: string, isFavorite: boolean) => {
+    console.log(`Featured property ${propertyId} favorite status: ${isFavorite}`);
+    
+    if (!isAuthenticated) {
+      console.warn('User must be logged in to save favorites');
+      return;
+    }
+
+    try {
+      if (isFavorite) {
+        await addToFavorites(propertyId);
+        console.log(`✅ Added property ${propertyId} to favorites`);
+      } else {
+        await removeFromFavorites(propertyId);
+        console.log(`✅ Removed property ${propertyId} from favorites`);
+      }
+    } catch (error) {
+      console.error(`❌ Failed to update favorite status for property ${propertyId}:`, error);
+    }
   };
 
   // === RENDER ===
@@ -178,6 +204,7 @@ const FeaturedProperties: React.FC = () => {
         <PropertyCard 
           key={property.id} 
           property={property}
+          initialIsFavorite={favorites.some(fav => fav.id === property.id)}
           onFavoriteChange={handleFavoriteChange}
           className="h-full"
         />

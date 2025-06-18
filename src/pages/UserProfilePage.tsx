@@ -1,8 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ChevronRight, User, Key, Edit3, Heart, Eye, LogOut } from 'lucide-react';
+import { ChevronRight, User, Key, Edit3, Heart, Eye, LogOut, ChevronRight as ChevronRightIcon } from 'lucide-react';
 import { useAuth, useUser } from '../hooks/useAuthQuery';
-import { UserFavorite } from '../services/authService';
+import { useFavorites } from '../hooks/useFavorites';
+import { PropertyCard } from '../components/properties/PropertyCard';
+import { PropertyType } from '../types/property';
 
 interface ProfileUpdateData {
   firstName: string;
@@ -33,6 +35,9 @@ const UserProfilePage: React.FC = () => {
   const [shouldLoadProfile, setShouldLoadProfile] = useState(false);
   const userQuery = useUser(shouldLoadProfile && isAuthenticated);
   
+  // Use the favorites hook
+  const { favorites, isLoading: isLoadingFavorites } = useFavorites();
+  
   const navigate = useNavigate();
   
   useEffect(() => {
@@ -41,7 +46,6 @@ const UserProfilePage: React.FC = () => {
 
   const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [isChangingPassword, setIsChangingPassword] = useState(false);
-  const [isLoadingFavorites, setIsLoadingFavorites] = useState(true);
 
   const [profileData, setProfileData] = useState<ProfileUpdateData>({
     firstName: '',
@@ -55,7 +59,6 @@ const UserProfilePage: React.FC = () => {
     confirmPassword: '',
   });
 
-  const [favoriteProperties, setFavoriteProperties] = useState<UserFavorite[]>([]);
   const [updateMessage, setUpdateMessage] = useState<string>('');
   const [updateError, setUpdateError] = useState<string>('');
   const [profileLoadError, setProfileLoadError] = useState<string>('');
@@ -89,40 +92,6 @@ const UserProfilePage: React.FC = () => {
       setProfileLoadError(''); // Clear any previous errors
     }
   }, [userQuery.data]);
-
-  // Load user favorites - DISABLED to prevent 401 errors
-  useEffect(() => {
-    const loadFavorites = async () => {
-      if (!isAuthenticated) return;
-      
-      // TEMPORARILY DISABLED - this is causing 401 errors
-      console.log('🔐 UserProfile - Favorites loading disabled to prevent 401 errors');
-      setIsLoadingFavorites(false);
-      setFavoriteProperties([]);
-      
-      // TODO: Re-enable when backend JWT_SECRET is fixed
-      /*
-      try {
-        setIsLoadingFavorites(true);
-        const response = await authService.getUserFavorites();
-        if (response.success && response.data) {
-          setFavoriteProperties(response.data);
-        } else if (response.error === 'Authentication required') {
-          console.warn('🔐 Authentication failed when loading favorites');
-          // Don't redirect here, just show empty favorites
-          setFavoriteProperties([]);
-        }
-      } catch (error) {
-        console.error('Error loading favorites:', error);
-        setFavoriteProperties([]);
-      } finally {
-        setIsLoadingFavorites(false);
-      }
-      */
-    };
-
-    loadFavorites();
-  }, [isAuthenticated]);
 
   const handleProfileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setProfileData({ ...profileData, [e.target.name]: e.target.value });
@@ -514,42 +483,110 @@ const UserProfilePage: React.FC = () => {
           {/* Favorite Properties */}
           <div className="bg-white shadow-sm rounded-lg border">
             <div className="px-6 py-4 border-b border-gray-200">
-              <h3 className="text-lg font-semibold text-gray-900 flex items-center">
-                <Heart className="w-5 h-5 mr-2" />
-                Favorite Properties
+              <h3 className="text-lg font-semibold text-gray-900 flex items-center justify-between">
+                <div className="flex items-center">
+                  <Heart className="w-5 h-5 mr-2" />
+                  Favorite Properties
+                </div>
+                {favorites.length > 0 && (
+                  <span className="text-sm text-gray-500">
+                    {favorites.length} {favorites.length === 1 ? 'property' : 'properties'}
+                  </span>
+                )}
               </h3>
             </div>
             
             <div className="px-6 py-4">
               {isLoadingFavorites ? (
-                <div className="space-y-3">
-                  <div className="animate-pulse h-16 bg-gray-200 rounded"></div>
-                  <div className="animate-pulse h-16 bg-gray-200 rounded"></div>
+                <div className="flex space-x-4 overflow-hidden">
+                  <div className="flex-shrink-0 w-80">
+                    <div className="animate-pulse h-96 bg-gray-200 rounded-lg"></div>
+                  </div>
+                  <div className="flex-shrink-0 w-80">
+                    <div className="animate-pulse h-96 bg-gray-200 rounded-lg"></div>
+                  </div>
                 </div>
-              ) : favoriteProperties.length > 0 ? (
-                <div className="space-y-3">
-                  {favoriteProperties.slice(0, 3).map((favorite) => (
-                    <div key={favorite.id} className="text-sm">
-                      <Link 
-                        to={`/properties/${favorite.id}`}
-                        className="text-blue-900 hover:text-blue-700 font-medium"
-                      >
-                        {favorite.title}
-                      </Link>
-                      <p className="text-gray-500">{favorite.city}</p>
+              ) : favorites.length > 0 ? (
+                <div className="relative">
+                  {/* Horizontal scrollable container */}
+                  <div 
+                    className="flex space-x-4 overflow-x-auto scrollbar-hide pb-4"
+                    style={{
+                      scrollbarWidth: 'none',
+                      msOverflowStyle: 'none'
+                    }}
+                  >
+                    {favorites.map((favorite) => (
+                      <div key={favorite.id} className="flex-shrink-0 w-80">
+                        <PropertyCard
+                          property={{
+                            id: favorite.id,
+                            title: favorite.title || 'Property Title Not Available',
+                            price: favorite.price || 0,
+                            predictedPrice: favorite.predictedPrice || undefined,
+                            surface: favorite.surface || 0,
+                            bedrooms: favorite.bedrooms || 1,
+                            bathrooms: 1, // Default since not in favorites data
+                            address: favorite.address || 'Address Not Available',
+                            city: favorite.city,
+                            county: '',
+                            type: (favorite.type as PropertyType) || 'APARTMENT',
+                            status: 'AVAILABLE' as const,
+                            listingType: 'SALE' as const,
+                            description: `Property with ${favorite.surface || 0}m², ${favorite.bedrooms || 1} bedrooms in ${favorite.city || 'Unknown location'}.`,
+                            images: favorite.image ? [favorite.image] : ['https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=400&h=300&fit=crop'],
+                            tags: [],
+                            featured: false,
+                            newListing: false,
+                            listedDate: favorite.dateSaved,
+                            lastUpdated: favorite.dateSaved,
+                            ownerId: 'system',
+                            ownerName: 'Property Owner',
+                            ownerEmail: 'owner@estateiq.ro',
+                            ownerPhone: '+40 XXX XXX XXX',
+                            currency: 'EUR'
+                          }}
+                          initialIsFavorite={true}
+                          onFavoriteChange={async (propertyId, isFavorite) => {
+                            console.log(`Profile favorite ${propertyId} status: ${isFavorite}`);
+                            // The PropertyCard will handle the API call through its own logic
+                          }}
+                          className="h-full"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                  
+                  {/* Scroll hint for many items */}
+                  {favorites.length > 2 && (
+                    <div className="absolute right-0 top-0 bottom-0 w-8 bg-gradient-to-l from-white to-transparent pointer-events-none flex items-center justify-center">
+                      <ChevronRightIcon className="w-4 h-4 text-gray-400" />
                     </div>
-                  ))}
-                  {favoriteProperties.length > 3 && (
+                  )}
+                  
+                  {/* View all link */}
+                  <div className="mt-4 text-center">
                     <Link 
                       to="/favorites" 
-                      className="text-blue-900 hover:text-blue-700 text-sm font-medium"
+                      className="inline-flex items-center text-blue-900 hover:text-blue-700 text-sm font-medium transition-colors"
                     >
-                      View all {favoriteProperties.length} favorites →
+                      View all favorites
+                      <ChevronRightIcon className="w-4 h-4 ml-1" />
                     </Link>
-                  )}
+                  </div>
                 </div>
               ) : (
-                <p className="text-gray-500 text-sm">No favorite properties yet.</p>
+                <div className="text-center py-8">
+                  <Heart className="w-12 h-12 text-gray-300 mx-auto mb-4" />
+                  <p className="text-gray-500 text-sm mb-4">No favorite properties yet.</p>
+                  <Link 
+                    to="/properties" 
+                    className="inline-flex items-center text-blue-900 hover:text-blue-700 text-sm font-medium transition-colors"
+                  >
+                    Browse properties
+                    <ChevronRightIcon className="w-4 h-4 ml-1" />
+                  </Link>
+                </div>
               )}
             </div>
           </div>

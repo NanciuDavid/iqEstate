@@ -25,15 +25,17 @@ interface PropertyCardProps {
   property: Property;
   className?: string;
   onFavoriteChange?: (propertyId: string, isFavorite: boolean) => void;
+  initialIsFavorite?: boolean;
 }
 
 export const PropertyCard: React.FC<PropertyCardProps> = ({ 
   property, 
   className = '',
-  onFavoriteChange 
+  onFavoriteChange,
+  initialIsFavorite = false
 }) => {
-  // Local state for favorite toggle
-  const [isFavorite, setIsFavorite] = useState(false);
+  // Local state for favorite toggle - initialize with prop value
+  const [isFavorite, setIsFavorite] = useState(initialIsFavorite);
   const [imageLoading, setImageLoading] = useState(true);
   const [imageError, setImageError] = useState(false);
   

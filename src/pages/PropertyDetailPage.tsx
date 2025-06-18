@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { 
-  ChevronRight, 
   MapPin, 
   BedDouble, 
   Bath, 
@@ -9,14 +8,17 @@ import {
   Calendar, 
   Heart, 
   Share2, 
-  Phone, 
-  Mail, 
-  ArrowRight,
+  ChevronRight,
+  Mail,
+  Phone,
   Building,
-  Tag
+  Tag,
+  ArrowRight
 } from 'lucide-react';
 import { Property, PropertyType } from '../types/property';
 import { propertyService } from '../services';
+import { useFavorites } from '../hooks/useFavorites';
+import { useAuth } from '../hooks/useAuthQuery';
 import PropertyPriceDashboard from '../components/property/PropertyPriceDashboard';
 import { PropertyCard } from '../components/properties/PropertyCard';
 import PropertyLocationMap from '../components/map/PropertyLocationMap';
@@ -65,14 +67,22 @@ const PropertyDetailPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [activeImage, setActiveImage] = useState(0);
-  const [isFavorite, setIsFavorite] = useState(false);
-  const [showContactForm, setShowContactForm] = useState(false);
+  const [isFavorite, setIsFavorite] = useState<boolean>(false);
+  const [showContactForm, setShowContactForm] = useState<boolean>(false);
   const [contactFormData, setContactFormData] = useState({
     name: '',
     email: '',
     phone: '',
     message: `I'm interested in this property and would like more information.`
   });
+
+  // === HOOKS ===
+  const { isAuthenticated } = useAuth();
+  const { 
+    addToFavorites, 
+    removeFromFavorites, 
+    favorites
+  } = useFavorites();
 
   // === DATA FETCHING ===
   useEffect(() => {
@@ -193,30 +203,36 @@ const PropertyDetailPage: React.FC = () => {
 
   // === EVENT HANDLERS ===
 
-  // Check if property is in favorites (localStorage)
+  // Check if property is in favorites from API
   useEffect(() => {
-    if (property) {
-      const favorites = JSON.parse(localStorage.getItem('favoriteProperties') || '[]');
-      setIsFavorite(favorites.includes(property.id));
+    if (property && isAuthenticated) {
+      const isPropertyFavorited = favorites.some(fav => fav.id === property.id);
+      setIsFavorite(isPropertyFavorited);
     }
-  }, [property]);
+  }, [property, favorites, isAuthenticated]);
 
-  const toggleFavorite = () => {
+  const toggleFavorite = async () => {
     if (!property) return;
     
-    const favorites = JSON.parse(localStorage.getItem('favoriteProperties') || '[]');
-    let updatedFavorites;
-    
-    if (isFavorite) {
-      updatedFavorites = favorites.filter((fav: string) => fav !== property.id);
-      console.log('💔 Removed from favorites:', property.id);
-    } else {
-      updatedFavorites = [...favorites, property.id];
-      console.log('❤️ Added to favorites:', property.id);
+    if (!isAuthenticated) {
+      console.warn('User not authenticated - cannot save favorites');
+      // Optionally show a toast or redirect to login
+      return;
     }
-    
-    localStorage.setItem('favoriteProperties', JSON.stringify(updatedFavorites));
-    setIsFavorite(!isFavorite);
+
+    try {
+      if (isFavorite) {
+        await removeFromFavorites(property.id);
+        console.log('💔 Removed from favorites:', property.id);
+      } else {
+        await addToFavorites(property.id);
+        console.log('❤️ Added to favorites:', property.id);
+      }
+      setIsFavorite(!isFavorite);
+    } catch (error) {
+      console.error('❌ Error updating favorite status:', error);
+      // Optionally show error toast to user
+    }
   };
 
   const handleShare = async () => {
@@ -375,11 +391,15 @@ const PropertyDetailPage: React.FC = () => {
         <div className="flex items-center mt-4 md:mt-0 space-x-4">
           <button 
             onClick={toggleFavorite}
+            disabled={!isAuthenticated}
             className={`flex items-center space-x-2 px-4 py-2 rounded-md transition-colors ${
-              isFavorite 
-                ? 'bg-red-100 text-red-600 hover:bg-red-200' 
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              !isAuthenticated 
+                ? 'bg-gray-50 text-gray-400 cursor-not-allowed' 
+                : isFavorite 
+                  ? 'bg-red-100 text-red-600 hover:bg-red-200' 
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
             }`}
+            title={!isAuthenticated ? 'Please log in to save favorites' : isFavorite ? 'Remove from favorites' : 'Add to favorites'}
           >
             <Heart className={`h-5 w-5 ${isFavorite ? 'fill-current' : ''}`} />
             <span>{isFavorite ? 'Saved' : 'Save'}</span>

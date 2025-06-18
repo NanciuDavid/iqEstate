@@ -276,7 +276,7 @@ export const changePassword = async (req: AuthenticatedRequest, res: Response): 
 // GET /api/users/favorites - Get user's favorite properties
 export const getUserFavorites = async (req: AuthenticatedRequest, res: Response): Promise<any> => {
   try {
-    if (!req.user || !req.user.user) {
+    if (!req.user || !req.user.id) {
       return res.status(401).json({
         success: false,
         message: 'Authentication required'
@@ -286,7 +286,7 @@ export const getUserFavorites = async (req: AuthenticatedRequest, res: Response)
     // Get user's saved listings with property details
     const savedListings = await prisma.user_saved_listings.findMany({
       where: {
-        user_id: req.user.user.id
+        user_id: req.user.id
       },
       include: {
         properties: {
@@ -342,7 +342,7 @@ export const getUserFavorites = async (req: AuthenticatedRequest, res: Response)
 // POST /api/users/favorites/:propertyId - Add property to favorites
 export const addToFavorites = async (req: AuthenticatedRequest, res: Response): Promise<any> => {
   try {
-    if (!req.user || !req.user.user) {
+    if (!req.user || !req.user.id) {
       return res.status(401).json({
         success: false,
         message: 'Authentication required'
@@ -351,6 +351,12 @@ export const addToFavorites = async (req: AuthenticatedRequest, res: Response): 
 
     const { propertyId } = req.params;
     const { notes } = req.body;
+
+    console.log('🔍 Adding to favorites:', {
+      userId: req.user.id,
+      propertyId: propertyId,
+      userEmail: req.user.email
+    });
 
     // Check if property exists
     const property = await prisma.properties.findUnique({
@@ -366,11 +372,30 @@ export const addToFavorites = async (req: AuthenticatedRequest, res: Response): 
       });
     }
 
+    // First ensure the user exists in user_profiles (create if needed)
+    await prisma.user_profiles.upsert({
+      where: {
+        user_id: req.user.id
+      },
+      update: {
+        last_login: new Date()
+      },
+      create: {
+        user_id: req.user.id,
+        email: req.user.email,
+        first_name: req.user.firstName,
+        last_name: req.user.lastName,
+        phone_number: req.user.phoneNumber,
+        date_registered: new Date(),
+        last_login: new Date()
+      }
+    });
+
     // Check if already in favorites
     const existingFavorite = await prisma.user_saved_listings.findUnique({
       where: {
         user_id_property_id: {
-          user_id: req.user.user.id,
+          user_id: req.user.id,
           property_id: propertyId
         }
       }
@@ -386,12 +411,14 @@ export const addToFavorites = async (req: AuthenticatedRequest, res: Response): 
     // Add to favorites
     await prisma.user_saved_listings.create({
       data: {
-        user_id: req.user.user.id,
+        user_id: req.user.id,
         property_id: propertyId,
         notes: notes || null,
         date_saved: new Date()
       }
     });
+
+    console.log('✅ Successfully added to favorites');
 
     return res.status(201).json({
       success: true,
@@ -410,7 +437,7 @@ export const addToFavorites = async (req: AuthenticatedRequest, res: Response): 
 // DELETE /api/users/favorites/:propertyId - Remove property from favorites
 export const removeFromFavorites = async (req: AuthenticatedRequest, res: Response): Promise<any> => {
   try {
-    if (!req.user || !req.user.user) {
+    if (!req.user || !req.user.id) {
       return res.status(401).json({
         success: false,
         message: 'Authentication required'
@@ -423,7 +450,7 @@ export const removeFromFavorites = async (req: AuthenticatedRequest, res: Respon
     const existingFavorite = await prisma.user_saved_listings.findUnique({
       where: {
         user_id_property_id: {
-          user_id: req.user.user.id,
+          user_id: req.user.id,
           property_id: propertyId
         }
       }
@@ -440,7 +467,7 @@ export const removeFromFavorites = async (req: AuthenticatedRequest, res: Respon
     await prisma.user_saved_listings.delete({
       where: {
         user_id_property_id: {
-          user_id: req.user.user.id,
+          user_id: req.user.id,
           property_id: propertyId
         }
       }
@@ -463,7 +490,7 @@ export const removeFromFavorites = async (req: AuthenticatedRequest, res: Respon
 // PUT /api/users/favorites/:propertyId/notes - Update notes for a favorite property
 export const updateFavoriteNotes = async (req: AuthenticatedRequest, res: Response): Promise<any> => {
   try {
-    if (!req.user || !req.user.user) {
+    if (!req.user || !req.user.id) {
       return res.status(401).json({
         success: false,
         message: 'Authentication required'
@@ -477,7 +504,7 @@ export const updateFavoriteNotes = async (req: AuthenticatedRequest, res: Respon
     const existingFavorite = await prisma.user_saved_listings.findUnique({
       where: {
         user_id_property_id: {
-          user_id: req.user.user.id,
+          user_id: req.user.id,
           property_id: propertyId
         }
       }
@@ -494,7 +521,7 @@ export const updateFavoriteNotes = async (req: AuthenticatedRequest, res: Respon
     await prisma.user_saved_listings.update({
       where: {
         user_id_property_id: {
-          user_id: req.user.user.id,
+          user_id: req.user.id,
           property_id: propertyId
         }
       },
