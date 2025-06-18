@@ -1,31 +1,58 @@
+/**
+ * HeroSearch Component for EstateIQ
+ * 
+ * This is the main search interface displayed prominently on the homepage.
+ * It provides users with multiple ways to search for properties:
+ * 
+ * Features:
+ * - Three search modes: Location, Price, and Property Type
+ * - Advanced filters panel with detailed criteria
+ * - Responsive design that works on all screen sizes
+ * - Form validation and URL parameter generation
+ * - Smooth transitions and hover effects
+ * 
+ * The component uses controlled inputs and manages complex state for
+ * both basic and advanced search functionality.
+ */
+
 import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Search, MapPin, Home, DollarSign } from 'lucide-react'
 
 const HeroSearch = () => {
+  // Navigation hook for redirecting to search results
   const navigate = useNavigate()
-  const [searchType, setSearchType] = useState<'location'|'price'|'type'>('location')
-  const [location, setLocation] = useState('')
-  const [priceRange, setPriceRange] = useState('any')
-  const [propertyType, setPropertyType] = useState('')
-  const [showAdvanced, setShowAdvanced] = useState(false)
+  
+  // === BASIC SEARCH STATE ===
+  const [searchType, setSearchType] = useState<'location'|'price'|'type'>('location') // Current search mode
+  const [location, setLocation] = useState('') // Location search input
+  const [priceRange, setPriceRange] = useState('any') // Price range selection
+  const [propertyType, setPropertyType] = useState('') // Property type selection
+  const [showAdvanced, setShowAdvanced] = useState(false) // Toggle for advanced filters
 
-  // advanced filters
-  const [rooms, setRooms] = useState('')
-  const [floor, setFloor] = useState('')
-  const [floorsMin, setFloorsMin] = useState('')
-  const [floorsMax, setFloorsMax] = useState('')
-  const [priceMin, setPriceMin] = useState('')
-  const [priceMax, setPriceMax] = useState('')
-  const [listed, setListed] = useState('')
-  const [yearMin, setYearMin] = useState('')
-  const [yearMax, setYearMax] = useState('')
-  const [seller, setSeller] = useState('')
-  const [condition, setCondition] = useState('')
-  const [features, setFeatures] = useState<string[]>([])
+  // === ADVANCED SEARCH FILTERS ===
+  // These provide more granular search options for power users
+  const [rooms, setRooms] = useState('') // Number of rooms
+  const [floor, setFloor] = useState('') // Floor number
+  const [floorsMin, setFloorsMin] = useState('') // Minimum floors in building
+  const [floorsMax, setFloorsMax] = useState('') // Maximum floors in building
+  const [priceMin, setPriceMin] = useState('') // Custom minimum price
+  const [priceMax, setPriceMax] = useState('') // Custom maximum price
+  const [listed, setListed] = useState('') // When property was listed
+  const [yearMin, setYearMin] = useState('') // Minimum construction year
+  const [yearMax, setYearMax] = useState('') // Maximum construction year
+  const [seller, setSeller] = useState('') // Seller type (owner, agency, etc.)
+  const [condition, setCondition] = useState('') // Property condition
+  const [features, setFeatures] = useState<string[]>([]) // Array of selected features/amenities
+  
+  /**
+   * Handle feature checkbox changes
+   * Manages the array of selected features by adding/removing items
+   */
   const handleFeatureChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { checked, value } = e.target
-    setFeatures(f => checked ? [...f, value] : f.filter(x=>x!==value)) // logic : if checked, add to array, if not, remove from array by filtering out the value 
+    // If checked, add to array; if unchecked, remove from array
+    setFeatures(f => checked ? [...f, value] : f.filter(x=>x!==value))
   }
 
   const handleSearch = (e: React.FormEvent) => {

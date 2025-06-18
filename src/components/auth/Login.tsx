@@ -1,49 +1,94 @@
-import React, { useState} from "react";
+/**
+ * Login Component for EstateIQ
+ * 
+ * This component provides the user login interface with:
+ * - Email and password form validation
+ * - Integration with authentication hook
+ * - Loading states and error handling
+ * - Social login options (placeholder)
+ * - Responsive design with Tailwind CSS
+ * - Automatic redirect after successful login
+ * 
+ * The component uses controlled inputs and provides real-time validation
+ * feedback to improve user experience.
+ */
+
+import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { User, Lock, ArrowRight, Mail } from "lucide-react";
+import { useAuth } from "../../hooks/useAuthQuery";
 
 const Login = () => {
+  // Navigation hook for redirecting after login
   const navigate = useNavigate();
+  
+  // Authentication hook provides login function and state
+  const { loginAsync, isAuthenticated, loginError, isLoggingIn } = useAuth();
+  
+  // Form state management
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState("");
+  const [formError, setFormError] = useState(""); // Client-side validation errors
 
+  // Redirect if already authenticated - prevents logged-in users from seeing login form
+  useEffect(() => {
+    if (isAuthenticated) {
+      console.log("🚀 Login: Authentication detected, navigating to home...");
+      // Add a small delay to ensure state has fully propagated
+      setTimeout(() => {
+        navigate("/");
+      }, 100);
+    }
+  }, [isAuthenticated, navigate]);
+
+  // Clear errors when form changes - provides clean UX
+  useEffect(() => {
+    setFormError("");
+  }, [email, password]);
+
+  /**
+   * Handle form submission with validation
+   * Performs client-side validation before calling the login API
+   */
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    // Basic field validation
     if (!email || !password) {
-      setError("Please fill in all fields");
+      setFormError("Please fill in all fields");
+      return;
+    }
+
+    // Email format validation
+    if (!email.includes("@")) {
+      setFormError("Please enter a valid email address");
+      return;
+    }
+
+    // Password validation (removed minimum length requirement)
+    if (password.length === 0) {
+      setFormError("Password is required");
       return;
     }
     
-    setIsLoading(true);
-    setError("");
+    // Clear any previous errors
+    setFormError("");
     
+    // Attempt login through auth hook
     try {
-      // Replace with actual authentication logic
-      // const response = await authService.login(email, password);
-      // if (response.success) {
-      //   navigate("/");
-      // } else {
-      //   setError(response.message);
-      // }
-      
-      // Simulate successful login for now
-      setTimeout(() => {
-        setIsLoading(false);
-        navigate("/");
-      }, 1000);
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    } catch (error: unknown) {
-      setIsLoading(false);
-      setError("An error occurred. Please try again.");
+      await loginAsync({ email, password });
+      console.log("✅ Login successful - navigating to home...");
+      navigate('/'); // Use React Router navigation instead of window.location
+    } catch (error) {
+      console.error('Login failed:', error);
     }
   };
 
+  // Combine client-side and server-side errors for display
+  const displayError = formError || (loginError?.message);
+
   return (
-    
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8 bg-white p-8 rounded-xl shadow-lg">
         <div className="text-center">
@@ -60,9 +105,9 @@ const Login = () => {
           </p>
         </div>
         
-        {error && (
+        {displayError && (
           <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md" role="alert">
-            {error}
+            {displayError}
           </div>
         )}
         
@@ -84,6 +129,7 @@ const Login = () => {
                   onChange={(e) => setEmail(e.target.value)}
                   className="w-full pl-10 py-2 border rounded-md focus:ring-blue-500 focus:border-blue-500"
                   placeholder="you@example.com"
+                  disabled={isLoggingIn}
                 />
               </div>
             </div>
@@ -104,6 +150,7 @@ const Login = () => {
                   onChange={(e) => setPassword(e.target.value)}
                   className="w-full pl-10 py-2 border rounded-md focus:ring-blue-500 focus:border-blue-500"
                   placeholder="********"
+                  disabled={isLoggingIn}
                 />
               </div>
             </div>
@@ -118,6 +165,7 @@ const Login = () => {
                 checked={rememberMe}
                 onChange={(e) => setRememberMe(e.target.checked)}
                 className="h-4 w-4 text-blue-900 border-gray-300 rounded focus:ring-blue-500"
+                disabled={isLoggingIn}
               />
               <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-700">
                 Remember me
@@ -134,16 +182,16 @@ const Login = () => {
           <div>
             <button
               type="submit"
-              disabled={isLoading}
-              className="w-full flex justify-center items-center px-4 py-3 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-900 hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
+              disabled={isLoggingIn || !email || !password}
+              className="w-full flex justify-center items-center px-4 py-3 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-900 hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {isLoading ? (
+              {isLoggingIn ? (
                 <span className="flex items-center">
                   <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                   </svg>
-                  Processing...
+                  Signing in...
                 </span>
               ) : (
                 <span className="flex items-center">
@@ -167,7 +215,8 @@ const Login = () => {
           <div className="mt-6 grid grid-cols-2 gap-3">
             <button
               type="button"
-              className="w-full inline-flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm bg-white text-sm font-medium text-gray-700 hover:bg-gray-50"
+              className="w-full inline-flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+              disabled={isLoggingIn}
             >
               <svg className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" />
@@ -180,7 +229,8 @@ const Login = () => {
 
             <button
               type="button"
-              className="w-full inline-flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm bg-white text-sm font-medium text-gray-700 hover:bg-gray-50"
+              className="w-full inline-flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+              disabled={isLoggingIn}
             >
               <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
                 <path fillRule="evenodd" d="M10 0C4.477 0 0 4.477 0 10c0 4.42 2.87 8.17 6.84 9.5.5.08.66-.23.66-.5v-1.69c-2.77.6-3.36-1.34-3.36-1.34-.46-1.16-1.11-1.47-1.11-1.47-.91-.62.07-.6.07-.6 1 .07 1.53 1.03 1.53 1.03.87 1.52 2.34 1.07 2.91.83.09-.65.35-1.09.63-1.34-2.22-.25-4.55-1.11-4.55-4.92 0-1.11.38-2 1.03-2.71-.1-.25-.45-1.29.1-2.64 0 0 .84-.27 2.75 1.02.79-.22 1.65-.33 2.5-.33.85 0 1.71.11 2.5.33 1.91-1.29 2.75-1.02 2.75-1.02.55 1.35.2 2.39.1 2.64.65.71 1.03 1.6 1.03 2.71 0 3.82-2.34 4.66-4.57 4.91.36.31.69.92.69 1.85V19c0 .27.16.59.67.5C17.14 18.16 20 14.42 20 10A10 10 0 0010 0z" clipRule="evenodd" />

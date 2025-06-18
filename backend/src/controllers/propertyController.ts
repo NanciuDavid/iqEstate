@@ -19,144 +19,120 @@ const prisma = new PrismaClient();
  * how database operations work with Prisma ORM.
  */
 
-// GET /api/properties - Get all properties with optional filtering and pagination
+/**
+ * GET /api/properties
+ * 
+ * Get all properties with pagination and optional filters
+ * Optimized for performance with selective field loading
+ */
 export const getAllProperties = async (req: Request, res: Response): Promise<any> => {
   try {
-    // Extract query parameters for filtering and pagination
-    const {
-      page = 1,           // Current page number (default: 1)
-      limit = 12,         // Number of properties per page (default: 12)
-      type,              // Property type filter (apartment, house, etc.)
-      minPrice,          // Minimum price filter
-      maxPrice,          // Maximum price filter
-      city,              // City filter
-      minRooms,          // Minimum number of rooms
-      maxRooms,          // Maximum number of rooms
-      featured,          // Show only featured properties
-      sortBy = 'date_created', // Sort field
-      sortOrder = 'desc'       // Sort order (asc/desc)
-    } = req.query;
+    // Parse pagination parameters with defaults for better performance
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = Math.min(parseInt(req.query.limit as string) || 20, 50); // Cap at 50 for performance
+    const offset = (page - 1) * limit;
 
-    // Convert page and limit to numbers for pagination
-    const pageNum = parseInt(page as string);
-    const limitNum = parseInt(limit as string);
-    const skip = (pageNum - 1) * limitNum; // Calculate how many records to skip
+    // Parse optimization flags
+    const includeImages = req.query.includeImages !== 'false';
+    const includePredictions = req.query.includePredictions !== 'false';
 
-    // Build the filter object based on query parameters
-    // This is where we dynamically build the database query
-    const filters: any = {
-      is_active_on_source: true, // Only show active listings
+    console.log(`📊 Fetching properties - Page: ${page}, Limit: ${limit}, Images: ${includeImages}, Predictions: ${includePredictions}`);
+
+    // Build optimized include object based on request
+    const includeConfig: any = {
+      // Always include basic property details
+      apartment_details: true,
+      house_details: true,
     };
 
-    // Add filters only if they are provided in the request
-    if (type) {
-      filters.property_category = type;
-    }
-
-    if (city) {
-      // Case-insensitive city search
-      filters.city = {
-        contains: city as string,
-        mode: 'insensitive'
+    // Conditionally include images
+    if (includeImages) {
+      includeConfig.property_images = {
+        orderBy: [
+          { is_primary: 'desc' },
+          { sort_order: 'asc' }
+        ],
+        take: 3 // Limit to first 3 images for performance
       };
     }
 
-    // Price range filtering
-    if (minPrice || maxPrice) {
-      filters.price = {};
-      if (minPrice) filters.price.gte = parseFloat(minPrice as string); // Greater than or equal
-      if (maxPrice) filters.price.lte = parseFloat(maxPrice as string); // Less than or equal
+    // Conditionally include ML predictions
+    if (includePredictions) {
+      includeConfig.ml_price_predictions = {
+        orderBy: { prediction_date: 'desc' },
+        take: 1
+      };
     }
 
-    // Room count filtering
-    if (minRooms || maxRooms) {
-      filters.number_of_rooms = {};
-      if (minRooms) filters.number_of_rooms.gte = parseInt(minRooms as string);
-      if (maxRooms) filters.number_of_rooms.lte = parseInt(maxRooms as string);
-    }
-
-    // If featured flag is set, only show featured properties
-    if (featured === 'true') {
-      // Note: Your schema doesn't have a featured field, so we'll use a workaround
-      // You might want to add this field to your properties model later
-      filters.listing_type = 'SALE'; // For now, let's use this as a proxy
-    }
-
-    // Build sort object
-    const orderBy: any = {};
-    orderBy[sortBy as string] = sortOrder as string;
-
-    // Execute the database query with Prisma
-    // This fetches properties with all the filters applied
-    const properties = await prisma.properties.findMany({
-      where: filters,
-      include: {
-        // Include related data that the frontend might need
-        property_images: {
-          where: { is_primary: true }, // Only get the primary image for list view
-          take: 1
-        },
-        ml_price_predictions: {
-          orderBy: { prediction_date: 'desc' },
-          take: 1 // Get the latest price prediction
+    // Conditionally include features (only if needed)
+    if (req.query.includeFeatures === 'true') {
+      includeConfig.property_to_feature_link = {
+        include: {
+          features_and_amenities: true
         }
-      },
-      skip,           // Skip records for pagination
-      take: limitNum, // Limit results
-      orderBy
+      };
+    }
+
+    // Execute optimized query
+    const properties = await prisma.properties.findMany({
+      skip: offset,
+      take: limit,
+      include: includeConfig,
+      orderBy: [
+        { date_created: 'desc' }, // Most recent first
+        { internal_property_id: 'desc' }
+      ]
     });
 
-    // Get total count for pagination metadata
-    const totalCount = await prisma.properties.count({
-      where: filters
+    console.log(`✅ Found ${properties.length} properties from database`);
+
+    // Transform properties for frontend with optimized data structure
+    const transformedProperties = properties.map(property => {
+      const baseProperty = {
+        id: property.internal_property_id,
+        title: property.title,
+        price: property.price ? Number(property.price) : null,
+        surface: property.total_surface_area ? Number(property.total_surface_area) : null,
+        bedrooms: property.number_of_rooms,
+        bathrooms: property.number_of_rooms, // Using rooms as proxy since bathrooms field doesn't exist
+        address: property.address_text,
+        city: property.city,
+        county: property.county,
+        latitude: property.latitude ? Number(property.latitude) : null,
+        longitude: property.longitude ? Number(property.longitude) : null,
+        type: property.property_category,
+        yearBuilt: property.construction_year,
+        listedDate: property.date_created,
+        newListing: property.date_created ? 
+          (new Date().getTime() - new Date(property.date_created).getTime()) < (7 * 24 * 60 * 60 * 1000) : false
+      };
+
+      // Add images only if requested
+      if (includeImages && (property as any).property_images) {
+        (baseProperty as any).images = (property as any).property_images.map((img: any) => img.image_url);
+      }
+
+      // Add predictions only if requested
+      if (includePredictions && (property as any).ml_price_predictions && (property as any).ml_price_predictions.length > 0) {
+        (baseProperty as any).predictedPrice = Number((property as any).ml_price_predictions[0].predicted_price);
+      }
+
+      return baseProperty;
     });
 
-    // Transform the data to match your frontend expectations
-    const transformedProperties = properties.map(property => ({
-      id: property.internal_property_id,
-      title: property.title,
-      price: property.price ? Number(property.price) : null,
-      predictedPrice: property.ml_price_predictions[0]?.predicted_price 
-        ? Number(property.ml_price_predictions[0].predicted_price) 
-        : null,
-      surface: property.total_surface_area ? Number(property.total_surface_area) : null,
-      bedrooms: property.number_of_rooms,
-      bathrooms: null, // Your schema doesn't separate bathrooms, you might add this
-      address: property.address_text,
-      city: property.city,
-      county: property.county,
-      latitude: property.latitude,
-      longitude: property.longitude,
-      type: property.property_category,
-      yearBuilt: property.construction_year,
-      images: property.property_images.map(img => img.image_url),
-      listedDate: property.date_created,
-      featured: false, // You can implement this logic based on your business rules
-      newListing: property.date_created ? 
-        (new Date().getTime() - new Date(property.date_created).getTime()) < (7 * 24 * 60 * 60 * 1000) : false
-    }));
-
-    // Calculate pagination metadata
-    const totalPages = Math.ceil(totalCount / limitNum);
-    const hasNextPage = pageNum < totalPages;
-    const hasPreviousPage = pageNum > 1;
-
-    // Send successful response with properties and pagination info
     return res.status(200).json({
       success: true,
       data: transformedProperties,
       pagination: {
-        currentPage: pageNum,
-        totalPages,
-        totalCount,
-        hasNextPage,
-        hasPreviousPage,
-        limit: limitNum
+        page,
+        limit,
+        total: properties.length,
+        hasMore: properties.length === limit
       }
     });
 
   } catch (error) {
-    console.error('Error fetching properties:', error);
+    console.error('❌ Error fetching properties:', error);
     return res.status(500).json({
       success: false,
       message: 'Internal server error while fetching properties'
@@ -294,29 +270,53 @@ export const searchPropertiesByArea = async (req: Request, res: Response): Promi
       where: searchFilters,
       include: {
         property_images: {
-          where: { is_primary: true },
-          take: 1
+          orderBy: [
+            { is_primary: 'desc' },
+            { sort_order: 'asc' }
+          ]
         },
         ml_price_predictions: {
           orderBy: { prediction_date: 'desc' },
           take: 1
-        }
+        },
+        property_to_feature_link: {
+          include: {
+            features_and_amenities: true
+          }
+        },
+        apartment_details: true,
+        house_details: true
       },
       take: 50 // Limit results for performance
     });
 
+    // Return the properties in the same format as getAllProperties for consistency
+    // This allows the frontend PropertyTransformService to handle the data properly
     const transformedProperties = properties.map(property => ({
-      id: property.internal_property_id,
+      internal_property_id: property.internal_property_id,
       title: property.title,
       price: property.price ? Number(property.price) : null,
       predictedPrice: property.ml_price_predictions[0]?.predicted_price 
         ? Number(property.ml_price_predictions[0].predicted_price) 
         : null,
+      total_surface_area: property.total_surface_area,
+      number_of_rooms: property.number_of_rooms,
       latitude: property.latitude,
       longitude: property.longitude,
-      address: property.address_text,
-      type: property.property_category,
-      image: property.property_images[0]?.image_url || null
+      address_text: property.address_text,
+      city: property.city,
+      county: property.county,
+      property_category: property.property_category,
+      construction_year: property.construction_year,
+      date_created: property.date_created,
+      is_active_on_source: property.is_active_on_source,
+      image_count: property.image_count,
+      accessibility_score: property.accessibility_score,
+      property_images: property.property_images,
+      ml_price_predictions: property.ml_price_predictions,
+      property_to_feature_link: property.property_to_feature_link,
+      apartment_details: property.apartment_details,
+      house_details: property.house_details
     }));
 
     return res.status(200).json({

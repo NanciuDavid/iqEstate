@@ -258,6 +258,58 @@ model user_search_history {
   user_profiles     user_profiles? @relation(fields: [user_id], references: [user_id], onDelete: Cascade, onUpdate: NoAction)
 }
 
+// BetterAuth Models
+model user {
+  id            String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  email         String    @unique @db.VarChar(255)
+  emailVerified Boolean   @default(false)
+  name          String?   @db.VarChar(255)
+  image         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  sessions      session[]
+  accounts      account[]
+}
+
+model session {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  expiresAt DateTime
+  token     String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  ipAddress String?
+  userAgent String?
+  userId    String   @db.Uuid
+  user      user     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model account {
+  id                String  @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  accountId         String
+  providerId        String
+  userId            String  @db.Uuid
+  accessToken       String?
+  refreshToken      String?
+  idToken           String?
+  accessTokenExpiresAt DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope             String?
+  password          String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  user              user     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model verification {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  identifier String
+  value     String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// Legacy user model (keeping for backward compatibility)
 model users {
   user_id             String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   email               String    @unique @db.VarChar(255)

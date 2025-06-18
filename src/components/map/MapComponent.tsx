@@ -188,7 +188,7 @@ interface MapComponentProps {
 
 const MapComponent: React.FC<MapComponentProps> = ({ onPolygonDrawn }) => {
   console.log('MapComponent rendering');
-  const [mapCenter, setMapCenter] = useState<[number, number]>([40.7128, -74.006]); // Default to NYC
+  const [mapCenter, setMapCenter] = useState<[number, number]>([44.7128, 26.006]); // Default to NYC
   const [drawingEnabled, setDrawingEnabled] = useState(false);
   
   useEffect(() => {
@@ -231,7 +231,6 @@ const MapComponent: React.FC<MapComponentProps> = ({ onPolygonDrawn }) => {
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           />
           
-          {/* Display markers for mock properties */}
           <PropertyMarkers />
           
           {/* Drawing tools */}

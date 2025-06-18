@@ -1,46 +1,78 @@
-// my-new-react-app/backend/src/middleware/authMiddleware.ts
-import { Request, Response, NextFunction } from 'express'; // Ensure NextFunction is here
-import jwt from 'jsonwebtoken';
-import dotenv from 'dotenv';
+/**
+ * Simple JWT Authentication Middleware for EstateIQ Backend
+ * 
+ * This middleware validates JWT tokens and adds user information to the request object.
+ * Compatible with the new AuthService and frontend API expectations.
+ */
 
-dotenv.config();
-
-const JWT_SECRET = process.env.JWT_SECRET;
+import { Request, Response, NextFunction } from 'express';
+import { verifyToken as verifyAuthToken, AuthUser } from '../services/authService';
 
 export interface AuthenticatedRequest extends Request {
-  user?: any; 
+  user?: AuthUser;
 }
 
-// Explicitly type the return for clarity, though Express middleware often relies on side effects (res.send or next())
-export const verifyToken = (req: AuthenticatedRequest, res: Response, next: NextFunction): void => {
+/**
+ * Middleware to verify JWT token and extract user information
+ */
+export const authMiddleware = (req: AuthenticatedRequest, res: Response, next: NextFunction): void => {
   const authHeader = req.headers.authorization;
-  const token = authHeader && authHeader.split(' ')[1];
+  const token = authHeader && authHeader.split(' ')[1]; // Extract token from "Bearer TOKEN"
+
+  console.log('🔐 Auth Middleware - Token verification:', {
+    hasAuthHeader: !!authHeader,
+    tokenLength: token?.length,
+    tokenPreview: token ? token.substring(0, 20) + '...' : 'No token',
+    endpoint: req.path,
+    method: req.method
+  });
 
   if (!token) {
-    res.status(401).json({ message: 'Access denied. No token provided.' });
-    return; // Return after sending response
-  }
-
-  if (!JWT_SECRET) {
-    console.error('JWT_SECRET is not set. Cannot verify token.');
-    res.status(500).json({ message: 'Server configuration error.' });
-    return; // Return after sending response
+    console.log('🔐 Auth Middleware - No token provided');
+    res.status(401).json({ 
+      success: false,
+      error: 'Access denied. No token provided.' 
+    });
+    return;
   }
 
   try {
-    const decoded = jwt.verify(token, JWT_SECRET);
-    req.user = decoded;
-    next(); 
+    console.log('🔐 Auth Middleware - Attempting to verify token with length:', token.length);
+    const user = verifyAuthToken(token);
+    
+    if (!user) {
+      console.log('🔐 Auth Middleware - Token verification returned null/undefined');
+      res.status(401).json({ 
+        success: false,
+        error: 'Invalid or expired token.' 
+      });
+      return;
+    }
+
+    console.log('🔐 Auth Middleware - Token verified successfully:', {
+      userId: user.id,
+      email: user.email,
+      userType: user.userType,
+      isVerified: user.isVerified
+    });
+
+    req.user = user;
+    next();
   } catch (error) {
-    if (error instanceof jwt.TokenExpiredError) {
-      res.status(401).json({ message: 'Token expired.' });
-      return; // Return
-    }
-    if (error instanceof jwt.JsonWebTokenError) {
-      res.status(403).json({ message: 'Invalid token.' });
-      return; // Return
-    }
-    res.status(403).json({ message: 'Token verification failed.' });
-    return; // Return
+    console.error('🔐 Auth Middleware - Token verification error:', {
+      error: error instanceof Error ? error.message : String(error),
+      tokenPreview: token.substring(0, 30) + '...'
+    });
+    res.status(401).json({ 
+      success: false,
+      error: 'Token verification failed.' 
+    });
+    return;
   }
 };
+
+/**
+ * Legacy middleware for backward compatibility
+ * @deprecated Use authMiddleware instead
+ */
+export const verifyToken = authMiddleware;

@@ -1,23 +1,25 @@
-import React, { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { ChevronRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import DirectMapComponent from '../components/map/DirectMapComponent';
 import PropertyList from '../components/map/PropertyList';
 import { Property } from '../types/property';
-import { mockProperties } from '../data/mockdata';
+import { propertyService, type PolygonSearchRequest } from '../services/propertyService';
+import { PropertyTransformService } from '../services/propertyTransformService';
 
 const MapSearchPage = () => {
   console.log('MapSearchPage rendering');
   const [properties, setProperties] = useState<Property[]>([]);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [showList, setShowList] = useState(false);
   const mapContainerRef = useRef<HTMLDivElement>(null);
   
   // Function to handle polygon drawing completion
-  const handlePolygonDrawn = (polygon: number[][]) => {
-    // Will use polygon coordinates to filter properties in future implementation
-    console.log(`Polygon with ${polygon.length} points drawn`);
+  const handlePolygonDrawn = async (polygon: number[][]) => {
+    console.log(`Polygon with ${polygon.length} points drawn:`, polygon);
     setLoading(true);
+    setError(null);
     setShowList(true);
     
     // Animate map container to shift left
@@ -25,14 +27,53 @@ const MapSearchPage = () => {
       mapContainerRef.current.classList.add('map-shift-left');
     }
     
-    // Simulate API call with timeout
-    setTimeout(() => {
-      // In a real app, you would filter properties based on the polygon
-      // For now, we'll just return some mock properties
-      const filteredProperties = mockProperties.slice(0, 4);
-      setProperties(filteredProperties);
+    try {
+      // Prepare the polygon search request
+      const searchRequest: PolygonSearchRequest = {
+        polygon: polygon,
+        filters: {
+          listingType: 'SALE', // You can add more filters here if needed
+          // propertyType: 'APARTMENT', // Uncomment to filter only apartments
+        }
+      };
+      
+      console.log('Sending polygon search request:', searchRequest);
+      
+      // Call the backend API to search properties within the polygon
+      const response = await propertyService.searchPropertiesByPolygon(searchRequest);
+      
+      if (response.success && response.data) {
+        console.log(`Found ${response.data.length} properties within the drawn area`);
+        
+        // Transform backend properties to frontend Property format
+        const transformedProperties = PropertyTransformService.transformDatabaseProperties(response.data);
+        setProperties(transformedProperties);
+        
+        console.log(`Transformed ${transformedProperties.length} properties for display`);
+      } else {
+        console.error('Failed to fetch properties:', response.error);
+        setError(response.error || 'Failed to fetch properties within the selected area');
+        setProperties([]);
+      }
+    } catch (err) {
+      console.error('Error searching properties by polygon:', err);
+      setError('An error occurred while searching for properties. Please try again.');
+      setProperties([]);
+    } finally {
       setLoading(false);
-    }, 1500);
+    }
+  };
+
+  // Function to clear search results and reset the map view
+  const clearResults = () => {
+    setProperties([]);
+    setError(null);
+    setShowList(false);
+    
+    // Animate map container back to full width
+    if (mapContainerRef.current) {
+      mapContainerRef.current.classList.remove('map-shift-left');
+    }
   };
   
   // Simple function to show properties list for testing
@@ -91,6 +132,31 @@ const MapSearchPage = () => {
             </div>
           </div>
           
+          {/* Results Summary and Clear Button */}
+          {showList && (
+            <div className="mt-4 flex items-center justify-between bg-gray-50 border border-gray-200 rounded-md p-3">
+              <div className="text-sm text-gray-700">
+                {loading ? (
+                  <span className="flex items-center">
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-900 mr-2"></div>
+                    Searching properties...
+                  </span>
+                ) : error ? (
+                  <span className="text-red-600">Search failed</span>
+                ) : (
+                  <span>
+                    Found <strong>{properties.length}</strong> propert{properties.length === 1 ? 'y' : 'ies'} in selected area
+                  </span>
+                )}
+              </div>
+              <button
+                onClick={clearResults}
+                className="text-sm bg-gray-200 hover:bg-gray-300 text-gray-700 px-3 py-1 rounded-md transition-colors"
+              >
+                Clear Results
+              </button>
+            </div>
+          )}
         </div>
 
         <div className="flex flex-col lg:flex-row transition-all duration-500 ease-in-out relative">
@@ -103,7 +169,7 @@ const MapSearchPage = () => {
 
           {showList && (
             <div className="w-full lg:w-1/3 lg:pl-6 mt-6 lg:mt-0 transition-opacity duration-500 ease-in-out">
-              <PropertyList properties={properties} loading={loading} />
+              <PropertyList properties={properties} loading={loading} error={error} />
             </div>
           )}
         </div>

@@ -3,13 +3,13 @@ import express, { Request, Response } from 'express';
 import cors from 'cors';
 
 // Import route modules
-import authRoutes from './routes/auth.routes';
+import simpleAuthRoutes from './routes/simpleAuth.routes';
 import propertiesRoutes from './routes/properties.routes';
 import predictionRoutes from './routes/prediction.routes';
 import userRoutes from './routes/user.routes';
 
 // Import middleware
-import { verifyToken, AuthenticatedRequest } from './middleware/authMiddleware';
+import { authMiddleware, AuthenticatedRequest } from './middleware/authMiddleware';
 
 // Load environment variables from .env file
 dotenv.config();
@@ -36,7 +36,12 @@ const app = express();
 
 // Enable CORS for all routes - allows React frontend to make requests
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:3000', // Allow requests from frontend
+  origin: [
+    'http://localhost:3000', 
+    'http://localhost:5173', 
+    'http://localhost:5174',
+    process.env.FRONTEND_URL || 'http://localhost:5173'
+  ], // Allow requests from various frontend ports
   credentials: true // Allow cookies and authorization headers
 }));
 
@@ -51,8 +56,8 @@ const port: number = parseInt(process.env.PORT || '3001', 10);
 
 // API Routes
 
-// Authentication routes - handle login, register, password reset
-app.use('/api/auth', authRoutes);
+// Simple JWT authentication routes - main authentication system
+app.use('/api/auth', simpleAuthRoutes);
 
 // Property routes - handle property listings, search, CRUD operations
 app.use('/api/properties', propertiesRoutes);
@@ -75,10 +80,10 @@ app.get('/api/health', (req: Request, res: Response) => {
 
 // Legacy profile endpoint (keeping for backward compatibility)
 // TODO: Move this to user routes once frontend is updated
-app.get('/api/my-profile', verifyToken, (req: AuthenticatedRequest, res: Response): any => {
-  // If verifyToken calls next(), we reach here.
+app.get('/api/my-profile', authMiddleware as any, (req: any, res: Response): any => {
+  // If authMiddleware calls next(), we reach here.
   if (!req.user) {
-    // This case should ideally be caught by verifyToken, but as a safeguard:
+    // This case should ideally be caught by authMiddleware, but as a safeguard:
     return res.status(403).json({ 
       success: false,
       message: 'User information not found after token verification.' 
@@ -102,7 +107,11 @@ app.use('/api/*', (req: Request, res: Response) => {
     availableEndpoints: {
       auth: [
         'POST /api/auth/register',
-        'POST /api/auth/login'
+        'POST /api/auth/login',
+        'GET /api/auth/profile',
+        'PUT /api/auth/profile',
+        'POST /api/auth/logout',
+        'GET /api/auth/verify'
       ],
       properties: [
         'GET /api/properties',
@@ -142,9 +151,10 @@ app.listen(port, () => {
   Port: ${port}
   Environment: ${process.env.NODE_ENV || 'development'}
   Database: ${process.env.DB_URL ? 'Connected' : 'Not configured'}
+  Auth: Simple JWT (No Passport.js)
   
   Available endpoints:
-  📝 Auth: http://localhost:${port}/api/auth
+  🔐 Auth: http://localhost:${port}/api/auth
   🏠 Properties: http://localhost:${port}/api/properties  
   🤖 Predictions: http://localhost:${port}/api/predict
   👤 Users: http://localhost:${port}/api/users

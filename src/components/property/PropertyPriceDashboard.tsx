@@ -39,8 +39,8 @@ const PropertyPriceDashboard: React.FC<PropertyPriceDashboardProps> = ({ propert
     },
     {
       name: 'Condition & Renovations', 
-      impact: property.tags.includes('Renovated') ? 4.5 : (property.yearBuilt < 2000 ? -1.0 : 0.5),
-      description: property.tags.includes('Renovated') ? 'Recent renovations significantly add value.' : (property.yearBuilt < 2000 ? 'Older property, may require updates.' : 'Good condition, standard for its age.'),
+      impact: property.tags.includes('Renovated') ? 4.5 : (property.yearBuilt && property.yearBuilt < 2000 ? -1.0 : 0.5),
+      description: property.tags.includes('Renovated') ? 'Recent renovations significantly add value.' : (property.yearBuilt && property.yearBuilt < 2000 ? 'Older property, may require updates.' : 'Good condition, standard for its age.'),
       icon: <Award className="w-5 h-5 text-green-600" />
     },
     {
@@ -112,6 +112,8 @@ const PropertyPriceDashboard: React.FC<PropertyPriceDashboardProps> = ({ propert
 
   const investmentScore = 'B+'; // This could be dynamically calculated
   const investmentReasoning = "The property shows good investment potential due to its location and positive local employment growth, despite current high interest rates. The low housing supply also supports potential appreciation.";
+
+
 
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-100 mb-8 overflow-hidden">

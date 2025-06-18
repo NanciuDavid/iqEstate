@@ -1,7 +1,11 @@
 @import "tailwindcss";
 
-body {
+/* Prevent horizontal overflow globally */
+html, body {
   margin: 0;
+  padding: 0;
+  width: 100%;
+  overflow-x: hidden; /* Prevent horizontal scrolling */
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
     'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
     sans-serif;
@@ -11,14 +15,53 @@ body {
   color: #1e293b; /* slate-800 - dark text for readability */
 }
 
+/* Ensure all elements respect viewport width */
+* {
+  box-sizing: border-box;
+}
+
+/* Prevent elements from exceeding viewport width */
+*, *::before, *::after {
+  max-width: 100%;
+}
+
 code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;
 }
 
-/* You might want to ensure root also has full height if not already */
+/* Root container fixes */
 #root {
   min-height: 100vh;
+  width: 100%;
   display: flex;
   flex-direction: column;
+  overflow-x: hidden; /* Prevent horizontal scrolling */
+}
+
+/* Mobile-specific fixes */
+@media (max-width: 768px) {
+  /* Ensure proper padding on mobile */
+  .container, .max-w-7xl, .max-w-6xl, .max-w-5xl, .max-w-4xl {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+  
+  /* Prevent wide tables from causing overflow */
+  table {
+    display: block;
+    overflow-x: auto;
+    white-space: nowrap;
+  }
+  
+  /* Ensure images are responsive */
+  img {
+    max-width: 100%;
+    height: auto;
+  }
+  
+  /* Fix for any potential flex issues */
+  .flex {
+    flex-wrap: wrap;
+  }
 }

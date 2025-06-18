@@ -1,9 +1,12 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { User, Lock, Mail, UserPlus } from "lucide-react";
+import { useAuth } from "../../hooks/useAuthQuery";
 
 const Register = () => {
   const navigate = useNavigate();
+  const { registerAsync, isAuthenticated, registerError, isRegistering } = useAuth();
+  
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
@@ -11,11 +14,22 @@ const Register = () => {
     password: "",
     confirmPassword: "",
   });
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState("");
+  const [formError, setFormError] = useState("");
   const [agreeToTerms, setAgreeToTerms] = useState(false);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // Redirect if already authenticated
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate("/");
+    }
+  }, [isAuthenticated, navigate]);
+
+  // Clear errors when form changes
+  useEffect(() => {
+    setFormError("");
+  }, [formData]);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setFormData({
       ...formData,
@@ -23,48 +37,76 @@ const Register = () => {
     });
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const validateForm = () => {
+    if (!formData.firstName.trim()) {
+      setFormError("First name is required");
+      return false;
+    }
     
-    // Basic validation
-    if (!formData.firstName || !formData.lastName || !formData.email || !formData.password) {
-      setError("Please fill in all required fields");
-      return;
+    if (!formData.lastName.trim()) {
+      setFormError("Last name is required");
+      return false;
+    }
+    
+    if (!formData.email.trim()) {
+      setFormError("Email is required");
+      return false;
+    }
+    
+    if (!formData.email.includes("@")) {
+      setFormError("Please enter a valid email address");
+      return false;
+    }
+    
+    if (!formData.password) {
+      setFormError("Password is required");
+      return false;
+    }
+    
+    if (formData.password.length === 0) {
+      setFormError("Password is required");
+      return false;
     }
     
     if (formData.password !== formData.confirmPassword) {
-      setError("Passwords do not match");
-      return;
+      setFormError("Passwords do not match");
+      return false;
     }
     
     if (!agreeToTerms) {
-      setError("You must agree to the terms and conditions");
+      setFormError("You must agree to the terms and conditions");
+      return false;
+    }
+    
+    return true;
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!validateForm()) {
       return;
     }
     
-    setIsLoading(true);
-    setError("");
+    setFormError("");
+    
+    const userData = {
+      name: `${formData.firstName} ${formData.lastName}`,
+      email: formData.email,
+      password: formData.password,
+      confirmPassword: formData.confirmPassword,
+    };
     
     try {
-      // Replace with actual registration logic
-      // const response = await authService.register(formData);
-      // if (response.success) {
-      //   navigate("/login");
-      // } else {
-      //   setError(response.message);
-      // }
-      
-      // Simulate successful registration
-      setTimeout(() => {
-        setIsLoading(false);
-        navigate("/login");
-      }, 1000);
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    } catch (err: unknown) {
-      setIsLoading(false);
-      setError("An error occurred during registration. Please try again.");
+      await registerAsync(userData);
+      console.log("✅ Registration successful - navigating to home...");
+      navigate('/');
+    } catch (error) {
+      console.error('Registration failed:', error);
     }
   };
+
+  const displayError = formError || (registerError?.message);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
@@ -83,9 +125,9 @@ const Register = () => {
           </p>
         </div>
         
-        {error && (
+        {displayError && (
           <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md" role="alert">
-            {error}
+            {displayError}
           </div>
         )}
         
@@ -107,6 +149,7 @@ const Register = () => {
                     onChange={handleChange}
                     className="w-full py-2 px-3 border rounded-md focus:ring-blue-500 focus:border-blue-500"
                     placeholder="John"
+                    disabled={isRegistering}
                   />
                 </div>
               </div>
@@ -126,6 +169,7 @@ const Register = () => {
                     onChange={handleChange}
                     className="w-full py-2 px-3 border rounded-md focus:ring-blue-500 focus:border-blue-500"
                     placeholder="Doe"
+                    disabled={isRegistering}
                   />
                 </div>
               </div>
@@ -147,6 +191,7 @@ const Register = () => {
                   onChange={handleChange}
                   className="w-full pl-10 py-2 border rounded-md focus:ring-blue-500 focus:border-blue-500"
                   placeholder="you@example.com"
+                  disabled={isRegistering}
                 />
               </div>
             </div>
@@ -167,10 +212,11 @@ const Register = () => {
                   onChange={handleChange}
                   className="w-full pl-10 py-2 border rounded-md focus:ring-blue-500 focus:border-blue-500"
                   placeholder="********"
+                  disabled={isRegistering}
                 />
               </div>
               <p className="mt-1 text-xs text-gray-500">
-                Password must be at least 8 characters long and contain letters, numbers, and special characters.
+                Choose a secure password for your account.
               </p>
             </div>
             
@@ -190,6 +236,7 @@ const Register = () => {
                   onChange={handleChange}
                   className="w-full pl-10 py-2 border rounded-md focus:ring-blue-500 focus:border-blue-500"
                   placeholder="********"
+                  disabled={isRegistering}
                 />
               </div>
             </div>
@@ -203,14 +250,15 @@ const Register = () => {
               checked={agreeToTerms}
               onChange={(e) => setAgreeToTerms(e.target.checked)}
               className="h-4 w-4 text-blue-900 border-gray-300 rounded focus:ring-blue-500"
+              disabled={isRegistering}
             />
             <label htmlFor="terms" className="ml-2 block text-sm text-gray-700">
               I agree to the{" "}
-              <Link to="/terms" className="text-blue-900 hover:text-blue-800">
-                Terms and Conditions
+              <Link to="/terms-of-service" className="text-blue-900 hover:text-blue-800">
+                Terms of Service
               </Link>{" "}
               and{" "}
-              <Link to="/privacy" className="text-blue-900 hover:text-blue-800">
+              <Link to="/privacy-policy" className="text-blue-900 hover:text-blue-800">
                 Privacy Policy
               </Link>
             </label>
@@ -219,20 +267,21 @@ const Register = () => {
           <div>
             <button
               type="submit"
-              disabled={isLoading}
-              className="w-full flex justify-center items-center px-4 py-3 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-900 hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
+              disabled={isRegistering || !agreeToTerms}
+              className="w-full flex justify-center items-center px-4 py-3 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-900 hover:bg-blue-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {isLoading ? (
+              {isRegistering ? (
                 <span className="flex items-center">
                   <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                   </svg>
-                  Processing...
+                  Creating account...
                 </span>
               ) : (
                 <span className="flex items-center">
-                  Create Account <UserPlus className="ml-2 h-4 w-4" />
+                  <UserPlus className="mr-2 h-4 w-4" />
+                  Create account
                 </span>
               )}
             </button>
@@ -245,14 +294,15 @@ const Register = () => {
               <div className="w-full border-t border-gray-300"></div>
             </div>
             <div className="relative flex justify-center text-sm">
-              <span className="px-2 bg-white text-gray-500">Or sign up with</span>
+              <span className="px-2 bg-white text-gray-500">Or continue with</span>
             </div>
           </div>
 
           <div className="mt-6 grid grid-cols-2 gap-3">
             <button
               type="button"
-              className="w-full inline-flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm bg-white text-sm font-medium text-gray-700 hover:bg-gray-50"
+              className="w-full inline-flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+              disabled={isRegistering}
             >
               <svg className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" />
@@ -265,7 +315,8 @@ const Register = () => {
 
             <button
               type="button"
-              className="w-full inline-flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm bg-white text-sm font-medium text-gray-700 hover:bg-gray-50"
+              className="w-full inline-flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+              disabled={isRegistering}
             >
               <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
                 <path fillRule="evenodd" d="M10 0C4.477 0 0 4.477 0 10c0 4.42 2.87 8.17 6.84 9.5.5.08.66-.23.66-.5v-1.69c-2.77.6-3.36-1.34-3.36-1.34-.46-1.16-1.11-1.47-1.11-1.47-.91-.62.07-.6.07-.6 1 .07 1.53 1.03 1.53 1.03.87 1.52 2.34 1.07 2.91.83.09-.65.35-1.09.63-1.34-2.22-.25-4.55-1.11-4.55-4.92 0-1.11.38-2 1.03-2.71-.1-.25-.45-1.29.1-2.64 0 0 .84-.27 2.75 1.02.79-.22 1.65-.33 2.5-.33.85 0 1.71.11 2.5.33 1.91-1.29 2.75-1.02 2.75-1.02.55 1.35.2 2.39.1 2.64.65.71 1.03 1.6 1.03 2.71 0 3.82-2.34 4.66-4.57 4.91.36.31.69.92.69 1.85V19c0 .27.16.59.67.5C17.14 18.16 20 14.42 20 10A10 10 0 0010 0z" clipRule="evenodd" />

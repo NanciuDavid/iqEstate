@@ -1,91 +1,141 @@
+/**
+ * Price Prediction Page for EstateIQ
+ * 
+ * This is the core AI-powered feature page that allows users to get property valuations.
+ * It demonstrates the main value proposition of EstateIQ by providing:
+ * 
+ * Features:
+ * - Comprehensive property information form
+ * - AI-powered price prediction algorithm (simulated)
+ * - Confidence scoring based on data completeness
+ * - Detailed prediction breakdown and explanations
+ * - Visual feedback and loading states
+ * - Integration with other app features
+ * 
+ * The page uses a sophisticated form that collects property details and
+ * applies a mock ML algorithm to generate realistic price predictions.
+ * In production, this would connect to a real ML model API.
+ */
+
 import React, { useEffect, useState } from 'react';
 import { ChevronRight, LineChart, Info, ArrowRight, DollarSign } from 'lucide-react';
 import { Link } from 'react-router-dom';
+
+// Import prediction-related components
 import PredictionForm from '../components/prediction/PredictionForm';
 import DetailedPredictionExplanation from '../components/prediction/DetailedPredictionExplanation';
 import PredictionSummaryDashboard from '../components/prediction/PredictionSummaryDashboard';
 
-// Define a type for the form data received from PredictionForm
+/**
+ * Interface for the comprehensive form data collected from users
+ * This represents all the property information needed for accurate predictions
+ */
 interface DetailedFormData {
-  header: string;
-  price: string; // Keep as string for form input, parse to number when used
-  surface: string;
-  rooms: string;
-  address: string;
-  latitude: string;
-  longitude: string;
-  floor: string;
-  rent: string;
-  sellerType: string;
-  freeFrom: string;
-  propertyType: string;
-  propertyForm: string; // 'sale' or 'rent'
-  status: string;
-  heatingType: string;
-  accessibilityScore: string;
-  description: string;
-  amenities: { [key: string]: boolean }; // e.g., { schoolNearby: true, ... }
+  header: string;                    // Property title/name
+  price: string;                     // Current/asking price (for comparison)
+  surface: string;                   // Property surface area in sqft
+  rooms: string;                     // Number of rooms
+  address: string;                   // Full property address
+  latitude: string;                  // Geographic coordinates
+  longitude: string;                 // Geographic coordinates
+  floor: string;                     // Floor level or type (ground, penthouse, etc.)
+  rent: string;                      // Current rent (if applicable)
+  sellerType: string;                // Type of seller (owner, developer, agency)
+  freeFrom: string;                  // Availability date
+  propertyType: string;              // Type of property (apartment, house, etc.)
+  propertyForm: string;              // 'sale' or 'rent' - determines prediction type
+  status: string;                    // Property status
+  heatingType: string;               // Heating system type
+  accessibilityScore: string;        // Location accessibility rating (1-10)
+  description: string;               // Property description
+  amenities: { [key: string]: boolean }; // Available amenities (gym, parking, etc.)
 }
 
 const PricePredictionPage: React.FC = () => {
+  // Scroll to top when component mounts
   useEffect(() => {
     window.scrollTo(0, 0);
   }, []);
 
-  const [predictionResult, setPredictionResult] = useState<number | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [confidence, setConfidence] = useState<'high' | 'medium' | 'low'>('high');
-  const [submittedFormData, setSubmittedFormData] = useState<DetailedFormData | null>(null);
+  // === COMPONENT STATE ===
+  const [predictionResult, setPredictionResult] = useState<number | null>(null); // Final prediction value
+  const [isLoading, setIsLoading] = useState(false); // Loading state during prediction
+  const [confidence, setConfidence] = useState<'high' | 'medium' | 'low'>('high'); // Prediction confidence level
+  const [submittedFormData, setSubmittedFormData] = useState<DetailedFormData | null>(null); // Store form data for analysis
 
+  /**
+   * Handle form submission and generate price prediction
+   * This function simulates an AI/ML model that considers multiple factors
+   * to generate realistic property valuations
+   */
   const handleFormSubmit = (formData: DetailedFormData) => {
     setIsLoading(true);
     setPredictionResult(null); // Reset previous result
-    setSubmittedFormData(formData); // Store the submitted form data
+    setSubmittedFormData(formData); // Store the submitted form data for detailed analysis
 
-    // Simulate API call
+    // Simulate API call to ML prediction service
+    // In production, this would be a real API call to your ML model
     setTimeout(() => {
-      let basePrediction = 200000 + Math.random() * 800000; // Base price
+      // === MOCK AI PREDICTION ALGORITHM ===
+      // Start with a base price range typical for the market
+      let basePrediction = 200000 + Math.random() * 800000;
 
-      // Adjust based on new comprehensive formData from PredictionForm
-      if (formData.propertyType === 'house') basePrediction *= 1.2;
-      if (formData.propertyType === 'penthouse') basePrediction *= 1.5;
-      if (formData.propertyType === 'duplex') basePrediction *= 1.3;
+      // === PROPERTY TYPE ADJUSTMENTS ===
+      // Different property types have different value multipliers
+      if (formData.propertyType === 'house') basePrediction *= 1.2;        // Houses typically more expensive
+      if (formData.propertyType === 'penthouse') basePrediction *= 1.5;    // Penthouses are premium
+      if (formData.propertyType === 'duplex') basePrediction *= 1.3;       // Duplexes have higher value
 
+      // === SURFACE AREA IMPACT ===
+      // Larger properties generally cost more, normalized around 1200 sqft
       const surfaceArea = parseInt(formData.surface) || 1000;
-      basePrediction *= (surfaceArea / 1200); // Normalize around 1200 sqft
+      basePrediction *= (surfaceArea / 1200);
 
+      // === ROOM COUNT IMPACT ===
+      // More rooms add value, with diminishing returns
       const rooms = parseInt(formData.rooms) || 2;
-      if (rooms > 2) basePrediction *= (1 + (rooms - 2) * 0.05);
+      if (rooms > 2) basePrediction *= (1 + (rooms - 2) * 0.05); // 5% increase per additional room
 
-      if (formData.floor === 'penthouse') basePrediction *= 1.15;
-      if (formData.floor === 'ground') basePrediction *= 1.02;
-      // Ensure formData.floor is a string before parseInt for numeric floors
+      // === FLOOR LEVEL IMPACT ===
+      // Different floors have different desirability
+      if (formData.floor === 'penthouse') basePrediction *= 1.15;  // Premium for penthouse
+      if (formData.floor === 'ground') basePrediction *= 1.02;     // Slight premium for ground floor access
+      
+      // High floors (above 5th) get a small premium for views
       const numericFloor = parseInt(formData.floor);
       if (!isNaN(numericFloor) && numericFloor > 5) basePrediction *= 1.05;
 
+      // === AMENITIES IMPACT ===
+      // Count and value each amenity
       let amenityScore = 0;
       for (const key in formData.amenities) {
         if (formData.amenities[key] === true) {
           amenityScore++;
         }
       }
-      basePrediction += amenityScore * 7000; // Add value per amenity
+      basePrediction += amenityScore * 7000; // Each amenity adds $7,000 value
 
-      if (formData.sellerType === 'developer') basePrediction *= 1.05; // Slightly higher for new developments
+      // === SELLER TYPE IMPACT ===
+      // Developer properties often have premium pricing
+      if (formData.sellerType === 'developer') basePrediction *= 1.05;
 
-      // Accessibility score (simple linear influence)
+      // === ACCESSIBILITY SCORE IMPACT ===
+      // Location accessibility affects property value (1-10 scale)
       const accessibility = parseInt(formData.accessibilityScore) || 5;
-      basePrediction *= (1 + (accessibility - 5) * 0.01);
+      basePrediction *= (1 + (accessibility - 5) * 0.01); // 1% change per point from baseline
       
-      // Mocking impact of being for rent vs sale
+      // === RENT VS SALE CONVERSION ===
+      // Convert sale price to monthly rent if needed
       if(formData.propertyForm === 'rent') {
-        // Simulate monthly rent: e.g. 1/250th of sale price, with some variation
+        // Typical rent is about 1/250th of sale price, with market variation
         basePrediction = basePrediction / 250 + (Math.random() - 0.5) * 200; 
       }
 
+      // Round to reasonable increments (thousands for sale, tens for rent)
       const finalPrediction = Math.round(basePrediction / (formData.propertyForm === 'rent' ? 10 : 1000)) * (formData.propertyForm === 'rent' ? 10 : 1000);
 
-      // Determine confidence based on number of fields filled in PredictionForm's formData
+      // === CONFIDENCE CALCULATION ===
+      // More complete data = higher confidence in prediction
       let filledFields = 0;
       if (formData.header) filledFields++;
       if (formData.surface) filledFields++;
@@ -97,19 +147,21 @@ const PricePredictionPage: React.FC = () => {
       if (formData.heatingType) filledFields++;
       if (formData.accessibilityScore) filledFields++;
       if (formData.description) filledFields++;
-      if (amenityScore > 0) filledFields++; // Consider amenities collectively as one field for this purpose
+      if (amenityScore > 0) filledFields++; // Amenities count as one field
       
+      // Set confidence based on data completeness
       if (filledFields >= 8) {
-        setConfidence('high');
+        setConfidence('high');    // 8+ fields = high confidence
       } else if (filledFields >= 5) {
-        setConfidence('medium');
+        setConfidence('medium');  // 5-7 fields = medium confidence
       } else {
-        setConfidence('low');
+        setConfidence('low');     // <5 fields = low confidence
       }
 
+      // Update state with results
       setPredictionResult(finalPrediction);
       setIsLoading(false);
-    }, 2000);
+    }, 2000); // 2-second delay to simulate API processing time
   };
 
   return (

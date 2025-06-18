@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Search, SlidersHorizontal, X } from 'lucide-react';
+import { PropertyType } from '../../types/property';
 
 interface PropertyFiltersProps {
   onFilterChange: (filters: FilterState) => void;
@@ -9,7 +10,7 @@ export interface FilterState {
   priceRange: [number, number];
   bedrooms: number | null;
   bathrooms: number | null;
-  propertyType: string | null;
+  propertyType: PropertyType | null;
   keywords: string;
 }
 
@@ -21,7 +22,14 @@ const initialFilters: FilterState = {
   keywords: '',
 };
 
-const propertyTypes = ['All Types', 'Apartment', 'House', 'Condo', 'Penthouse', 'Townhouse', 'Studio'];
+// Property type mapping between display names and enum values
+const propertyTypeOptions = [
+  { display: 'All Types', value: null },
+  { display: 'Apartment', value: 'APARTMENT' as PropertyType },
+  { display: 'House', value: 'HOUSE' as PropertyType },
+  { display: 'Land', value: 'LAND' as PropertyType },
+  { display: 'Other Property', value: 'OTHER_PROPERTY' as PropertyType },
+];
 
 const PropertyFilters: React.FC<PropertyFiltersProps> = ({ onFilterChange }) => {
   const [filters, setFilters] = useState<FilterState>(initialFilters);
@@ -42,8 +50,10 @@ const PropertyFilters: React.FC<PropertyFiltersProps> = ({ onFilterChange }) => 
       const numValue = value === '' ? null : parseInt(value);
       setFilters({ ...filters, [name]: numValue });
     } else if (name === 'propertyType') {
-      const typeValue = value === 'All Types' ? null : value;
-      setFilters({ ...filters, [name]: typeValue });
+      // Find the matching property type from our options
+      const selectedOption = propertyTypeOptions.find(option => option.display === value);
+      const typeValue = selectedOption ? selectedOption.value : null;
+      setFilters({ ...filters, propertyType: typeValue });
     } else {
       setFilters({ ...filters, [name]: value });
     }
@@ -51,12 +61,20 @@ const PropertyFilters: React.FC<PropertyFiltersProps> = ({ onFilterChange }) => 
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    console.log('🔍 Applying filters:', filters);
     onFilterChange(filters);
   };
 
   const resetFilters = () => {
+    console.log('🔄 Resetting filters');
     setFilters(initialFilters);
     onFilterChange(initialFilters);
+  };
+
+  // Get display value for current property type
+  const getCurrentPropertyTypeDisplay = () => {
+    const currentOption = propertyTypeOptions.find(option => option.value === filters.propertyType);
+    return currentOption ? currentOption.display : 'All Types';
   };
 
   return (
@@ -65,6 +83,7 @@ const PropertyFilters: React.FC<PropertyFiltersProps> = ({ onFilterChange }) => 
         <div className="flex items-center justify-between">
           <h3 className="text-lg font-semibold text-gray-900">Search & Filter</h3>
           <button 
+            type="button"
             onClick={() => setIsExpanded(!isExpanded)}
             className="flex items-center text-sm text-blue-900 hover:text-blue-700"
           >
@@ -106,13 +125,13 @@ const PropertyFilters: React.FC<PropertyFiltersProps> = ({ onFilterChange }) => 
               </label>
               <select
                 name="propertyType"
-                value={filters.propertyType || 'All Types'}
+                value={getCurrentPropertyTypeDisplay()}
                 onChange={handleInputChange}
                 className="w-full py-2 px-3 border rounded-md focus:ring-blue-500 focus:border-blue-500"
               >
-                {propertyTypes.map((type) => (
-                  <option key={type} value={type}>
-                    {type}
+                {propertyTypeOptions.map((option) => (
+                  <option key={option.display} value={option.display}>
+                    {option.display}
                   </option>
                 ))}
               </select>
@@ -157,7 +176,7 @@ const PropertyFilters: React.FC<PropertyFiltersProps> = ({ onFilterChange }) => 
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Price Range
+                Price Range (€)
               </label>
               <div className="flex items-center space-x-2">
                 <input
@@ -167,6 +186,8 @@ const PropertyFilters: React.FC<PropertyFiltersProps> = ({ onFilterChange }) => 
                   onChange={handleInputChange}
                   placeholder="Min"
                   className="w-full py-2 px-3 border rounded-md focus:ring-blue-500 focus:border-blue-500"
+                  min="0"
+                  step="1000"
                 />
                 <span className="text-gray-500">-</span>
                 <input
@@ -176,6 +197,8 @@ const PropertyFilters: React.FC<PropertyFiltersProps> = ({ onFilterChange }) => 
                   onChange={handleInputChange}
                   placeholder="Max"
                   className="w-full py-2 px-3 border rounded-md focus:ring-blue-500 focus:border-blue-500"
+                  min="0"
+                  step="1000"
                 />
               </div>
             </div>
@@ -186,7 +209,7 @@ const PropertyFilters: React.FC<PropertyFiltersProps> = ({ onFilterChange }) => 
           <button
             type="button"
             onClick={resetFilters}
-            className="text-gray-700 hover:text-gray-900"
+            className="text-gray-700 hover:text-gray-900 transition-colors"
           >
             Reset Filters
           </button>
